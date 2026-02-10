@@ -20,7 +20,7 @@ func TestMacOS_SeatbeltBlocksWriteOutsideWorkspace(t *testing.T) {
 	skipIfAlreadySandboxed(t)
 
 	workspace := createTempWorkspace(t)
-	outsideFile := "/tmp/fence-test-outside-" + filepath.Base(workspace) + ".txt"
+	outsideFile := "/tmp/greywall-test-outside-" + filepath.Base(workspace) + ".txt"
 	defer func() { _ = os.Remove(outsideFile) }()
 
 	cfg := testConfigWithWorkspace(workspace)
@@ -138,23 +138,23 @@ func TestMacOS_SeatbeltBlocksWriteSystemFiles(t *testing.T) {
 	cfg := testConfigWithWorkspace(workspace)
 
 	// Attempting to write to /etc should fail
-	result := runUnderSandbox(t, cfg, "touch /etc/fence-test-file", workspace)
+	result := runUnderSandbox(t, cfg, "touch /etc/greywall-test-file", workspace)
 
 	assertBlocked(t, result)
-	assertFileNotExists(t, "/etc/fence-test-file")
+	assertFileNotExists(t, "/etc/greywall-test-file")
 }
 
-// TestMacOS_SeatbeltAllowsTmpFence verifies /tmp/fence is writable.
-func TestMacOS_SeatbeltAllowsTmpFence(t *testing.T) {
+// TestMacOS_SeatbeltAllowsTmpGreywall verifies /tmp/greywall is writable.
+func TestMacOS_SeatbeltAllowsTmpGreywall(t *testing.T) {
 	skipIfAlreadySandboxed(t)
 
 	workspace := createTempWorkspace(t)
 	cfg := testConfigWithWorkspace(workspace)
 
-	// Ensure /tmp/fence exists
-	_ = os.MkdirAll("/tmp/fence", 0o750)
+	// Ensure /tmp/greywall exists
+	_ = os.MkdirAll("/tmp/greywall", 0o750)
 
-	testFile := "/tmp/fence/test-file-" + filepath.Base(workspace)
+	testFile := "/tmp/greywall/test-file-" + filepath.Base(workspace)
 	defer func() { _ = os.Remove(testFile) }()
 
 	result := runUnderSandbox(t, cfg, "echo 'test' > "+testFile, workspace)
@@ -221,8 +221,8 @@ func TestMacOS_ProxyAllowsTrafficViaProxy(t *testing.T) {
 	cfg.Filesystem.AllowWrite = []string{workspace}
 
 	// This test requires actual network and a running SOCKS5 proxy
-	if os.Getenv("FENCE_TEST_NETWORK") != "1" {
-		t.Skip("skipping: set FENCE_TEST_NETWORK=1 to run network tests (requires SOCKS5 proxy on localhost:1080)")
+	if os.Getenv("GREYWALL_TEST_NETWORK") != "1" {
+		t.Skip("skipping: set GREYWALL_TEST_NETWORK=1 to run network tests (requires SOCKS5 proxy on localhost:1080)")
 	}
 
 	result := runUnderSandboxWithTimeout(t, cfg, "curl -s --connect-timeout 5 --max-time 10 https://httpbin.org/get", workspace, 15*time.Second)
@@ -290,10 +290,10 @@ func TestMacOS_SymlinkEscapeBlocked(t *testing.T) {
 	}
 
 	// Try to write through the symlink
-	result := runUnderSandbox(t, cfg, "echo 'test' > "+symlinkPath+"/fence-test", workspace)
+	result := runUnderSandbox(t, cfg, "echo 'test' > "+symlinkPath+"/greywall-test", workspace)
 
 	assertBlocked(t, result)
-	assertFileNotExists(t, "/etc/fence-test")
+	assertFileNotExists(t, "/etc/greywall-test")
 }
 
 // TestMacOS_PathTraversalBlocked verifies path traversal attacks are prevented.
@@ -303,10 +303,10 @@ func TestMacOS_PathTraversalBlocked(t *testing.T) {
 	workspace := createTempWorkspace(t)
 	cfg := testConfigWithWorkspace(workspace)
 
-	result := runUnderSandbox(t, cfg, "touch ../../../../tmp/fence-escape-test", workspace)
+	result := runUnderSandbox(t, cfg, "touch ../../../../tmp/greywall-escape-test", workspace)
 
 	assertBlocked(t, result)
-	assertFileNotExists(t, "/tmp/fence-escape-test")
+	assertFileNotExists(t, "/tmp/greywall-escape-test")
 }
 
 // TestMacOS_DeviceAccessBlocked verifies device files cannot be written.
@@ -332,7 +332,7 @@ func TestMacOS_DeviceAccessBlocked(t *testing.T) {
 // ============================================================================
 
 // TestMacOS_ReadOnlyPolicy verifies that files outside the allowed write paths cannot be written.
-// Note: Fence always adds some default writable paths (/tmp/fence, /dev/null, etc.)
+// Note: Greywall always adds some default writable paths (/tmp/greywall, /dev/null, etc.)
 // so "read-only" here means "outside the workspace".
 func TestMacOS_ReadOnlyPolicy(t *testing.T) {
 	skipIfAlreadySandboxed(t)
@@ -353,7 +353,7 @@ func TestMacOS_ReadOnlyPolicy(t *testing.T) {
 	assertAllowed(t, result)
 
 	// Writing outside workspace should fail
-	outsidePath := "/tmp/fence-test-readonly-" + filepath.Base(workspace) + ".txt"
+	outsidePath := "/tmp/greywall-test-readonly-" + filepath.Base(workspace) + ".txt"
 	defer func() { _ = os.Remove(outsidePath) }()
 	result = runUnderSandbox(t, cfg, "echo 'outside' > "+outsidePath, workspace)
 	assertBlocked(t, result)
@@ -373,7 +373,7 @@ func TestMacOS_WorkspaceWritePolicy(t *testing.T) {
 	assertFileExists(t, filepath.Join(workspace, "test.txt"))
 
 	// Writing outside workspace should fail
-	outsideFile := "/tmp/fence-test-outside.txt"
+	outsideFile := "/tmp/greywall-test-outside.txt"
 	defer func() { _ = os.Remove(outsideFile) }()
 	result = runUnderSandbox(t, cfg, "echo 'test' > "+outsideFile, workspace)
 	assertBlocked(t, result)
@@ -399,7 +399,7 @@ func TestMacOS_MultipleWritableRoots(t *testing.T) {
 	assertAllowed(t, result)
 
 	// Writing outside both should fail
-	outsideFile := "/tmp/fence-test-outside-multi.txt"
+	outsideFile := "/tmp/greywall-test-outside-multi.txt"
 	defer func() { _ = os.Remove(outsideFile) }()
 	result = runUnderSandbox(t, cfg, "echo 'test' > "+outsideFile, workspace1)
 	assertBlocked(t, result)

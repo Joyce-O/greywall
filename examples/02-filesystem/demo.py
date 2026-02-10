@@ -2,13 +2,13 @@
 """
 Filesystem Sandbox Demo
 
-This script demonstrates fence's filesystem controls:
+This script demonstrates greywall's filesystem controls:
 - allowWrite: Only specific directories are writable
 - denyWrite: Block writes to sensitive files
 - denyRead: Block reads from sensitive paths
 
-Run WITHOUT fence to see all operations succeed.
-Run WITH fence to see unauthorized operations blocked.
+Run WITHOUT greywall to see all operations succeed.
+Run WITH greywall to see unauthorized operations blocked.
 """
 
 import os
@@ -78,7 +78,7 @@ def main():
 ╔═══════════════════════════════════════════════════════════╗
 ║  Filesystem Sandbox Demo                                  ║
 ╠═══════════════════════════════════════════════════════════╣
-║  Tests fence's filesystem controls:                       ║
+║  Tests greywall's filesystem controls:                       ║
 ║    - allowWrite: Only ./output/ is writable               ║
 ║    - denyWrite: .env and *.key files are protected        ║
 ║    - denyRead: /etc/shadow is blocked                     ║
@@ -96,7 +96,7 @@ def main():
         "Write to ./output/ (allowed)",
     )
 
-    # Test 2: Write to project root (should fail with fence)
+    # Test 2: Write to project root (should fail with greywall)
     try_write(
         "unauthorized.txt",
         "This should not be writable.\n",
@@ -133,12 +133,12 @@ def main():
         print(f"({skipped} test(s) skipped - file not found)")
 
     if blocked > 0:
-        print(f"✅ Fence blocked {blocked} unauthorized operation(s)")
+        print(f"✅ Greywall blocked {blocked} unauthorized operation(s)")
         print(f"{succeeded} allowed operation(s) succeeded")
         print("\nFilesystem sandbox is working!\n")
     else:
-        print("⚠️ All operations succeeded - you are likely not running in fence")
-        print("Run with: fence --settings fence.json python demo.py\n")
+        print("⚠️ All operations succeeded - you are likely not running in greywall")
+        print("Run with: greywall --settings greywall.json python demo.py\n")
 
     cleanup()
 

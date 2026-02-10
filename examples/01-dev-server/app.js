@@ -2,7 +2,7 @@
  * Demo Express app that:
  * 1. Serves an API on port 3000
  * 2. Connects to Redis on localhost:6379
- * 3. Attempts to call external APIs (blocked by fence)
+ * 3. Attempts to call external APIs (blocked by greywall)
  *
  * This demonstrates allowLocalOutbound - the app can reach
  * local services (Redis) but not the external internet.
@@ -60,7 +60,7 @@ async function fetchExternal(url) {
     signal: AbortSignal.timeout(5000),
   };
 
-  // Use proxy if available (set by fence)
+  // Use proxy if available (set by greywall)
   if (proxyUrl) {
     options.dispatcher = new ProxyAgent(proxyUrl);
   }
@@ -84,7 +84,7 @@ app.get("/", (req, res) => {
       "/api/users": "List all users from Redis",
       "/api/users/:id": "Get user by ID from Redis",
       "/api/health": "Health check",
-      "/api/external": "Try to call external API (blocked by fence)",
+      "/api/external": "Try to call external API (blocked by greywall)",
     },
   });
 });
@@ -160,20 +160,20 @@ app.get("/api/external", async (req, res) => {
 
   try {
     const result = await fetchExternal("https://httpbin.org/get");
-    // Check if we're using a proxy (indicates fence is running)
+    // Check if we're using a proxy (indicates greywall is running)
     const usingProxy = !!(process.env.HTTPS_PROXY || process.env.HTTP_PROXY);
     res.json({
       status: "success",
       message: usingProxy
         ? "✓ Request allowed (httpbin.org is whitelisted)"
-        : "⚠️ No proxy detected - not running in fence",
+        : "⚠️ No proxy detected - not running in greywall",
       proxy: usingProxy ? process.env.HTTPS_PROXY : null,
       data: result,
     });
   } catch (error) {
     res.json({
       status: "blocked",
-      message: "✓ External call blocked by fence",
+      message: "✓ External call blocked by greywall",
       error: error.message,
     });
   }

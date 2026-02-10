@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // ============================================================================
@@ -44,8 +44,8 @@ func (r *SandboxTestResult) Failed() bool {
 // skipIfAlreadySandboxed skips the test if running inside a sandbox.
 func skipIfAlreadySandboxed(t *testing.T) {
 	t.Helper()
-	if os.Getenv("FENCE_SANDBOX") == "1" {
-		t.Skip("skipping: already running inside Fence sandbox")
+	if os.Getenv("GREYWALL_SANDBOX") == "1" {
+		t.Skip("skipping: already running inside Greywall sandbox")
 	}
 }
 
@@ -157,7 +157,7 @@ func testConfigWithProxy(proxyURL string) *config.Config {
 // Sandbox Execution Helpers
 // ============================================================================
 
-// runUnderSandbox executes a command under the fence sandbox.
+// runUnderSandbox executes a command under the greywall sandbox.
 // This uses the sandbox Manager directly for integration testing.
 func runUnderSandbox(t *testing.T, cfg *config.Config, command string, workDir string) *SandboxTestResult {
 	t.Helper()
@@ -281,7 +281,7 @@ func executeShellCommandWithTimeout(t *testing.T, command string, workDir string
 // createTempWorkspace creates a temporary directory for testing.
 func createTempWorkspace(t *testing.T) string {
 	t.Helper()
-	dir, err := os.MkdirTemp("", "fence-test-*")
+	dir, err := os.MkdirTemp("", "greywall-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp workspace: %v", err)
 	}
@@ -492,10 +492,10 @@ func TestIntegration_EnvWorks(t *testing.T) {
 	workspace := createTempWorkspace(t)
 	cfg := testConfigWithWorkspace(workspace)
 
-	result := runUnderSandbox(t, cfg, "env | grep FENCE", workspace)
+	result := runUnderSandbox(t, cfg, "env | grep GREYWALL", workspace)
 
 	assertAllowed(t, result)
-	assertContains(t, result.Stdout, "FENCE_SANDBOX=1")
+	assertContains(t, result.Stdout, "GREYWALL_SANDBOX=1")
 }
 
 func TestExecuteShellCommandBwrapError(t *testing.T) {

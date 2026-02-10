@@ -19,7 +19,7 @@ on:
   #   paths:
   #     - "internal/sandbox/**"
   #     - "internal/proxy/**"
-  #     - "cmd/fence/**"
+  #     - "cmd/greywall/**"
 
 permissions:
   contents: read
@@ -72,7 +72,7 @@ jobs:
       - name: Install benchstat
         run: go install golang.org/x/perf/cmd/benchstat@latest
 
-      - name: Build fence
+      - name: Build greywall
         run: make build-ci
 
       - name: Run Go microbenchmarks
@@ -146,7 +146,7 @@ jobs:
       - name: Install benchstat
         run: go install golang.org/x/perf/cmd/benchstat@latest
 
-      - name: Build fence
+      - name: Build greywall
         run: make build-ci
 
       - name: Run Go microbenchmarks

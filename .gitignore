@@ -1,7 +1,7 @@
-# Binary (only at root, not cmd/fence or pkg/fence)
-/fence
-/fence_*
-/fence-*
+# Binary (only at root, not cmd/greywall or pkg/greywall)
+/greywall
+/greywall_*
+/greywall-*
 
 # Tar archives
 *.tar.gz

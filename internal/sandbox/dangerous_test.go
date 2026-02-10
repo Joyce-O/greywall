@@ -14,7 +14,7 @@ func TestGetDefaultWritePaths(t *testing.T) {
 		t.Error("GetDefaultWritePaths() returned empty slice")
 	}
 
-	essentialPaths := []string{"/dev/stdout", "/dev/stderr", "/dev/null", "/tmp/fence"}
+	essentialPaths := []string{"/dev/stdout", "/dev/stderr", "/dev/null", "/tmp/greywall"}
 	for _, essential := range essentialPaths {
 		found := slices.Contains(paths, essential)
 		if !found {

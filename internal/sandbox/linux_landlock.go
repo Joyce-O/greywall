@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 	"github.com/bmatcuk/doublestar/v4"
 	"golang.org/x/sys/unix"
 )
@@ -22,7 +22,7 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 	features := DetectLinuxFeatures()
 	if !features.CanUseLandlock() {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Not available (kernel %d.%d < 5.13), skipping\n",
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Not available (kernel %d.%d < 5.13), skipping\n",
 				features.KernelMajor, features.KernelMinor)
 		}
 		return nil // Graceful fallback - Landlock not available
@@ -31,7 +31,7 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 	ruleset, err := NewLandlockRuleset(debug)
 	if err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Failed to create ruleset: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Failed to create ruleset: %v\n", err)
 		}
 		return nil // Graceful fallback
 	}
@@ -39,7 +39,7 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 
 	if err := ruleset.Initialize(); err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Failed to initialize: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Failed to initialize: %v\n", err)
 		}
 		return nil // Graceful fallback
 	}
@@ -66,7 +66,7 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 		if err := ruleset.AllowRead(p); err != nil && debug {
 			// Ignore errors for paths that don't exist
 			if !os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add read path %s: %v\n", p, err)
+				fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add read path %s: %v\n", p, err)
 			}
 		}
 	}
@@ -77,40 +77,40 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 	if target, err := filepath.EvalSymlinks("/etc/resolv.conf"); err == nil && target != "/etc/resolv.conf" {
 		targetDir := filepath.Dir(target)
 		if err := ruleset.AllowRead(targetDir); err != nil && debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add resolv.conf target dir %s: %v\n", targetDir, err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add resolv.conf target dir %s: %v\n", targetDir, err)
 		}
 	}
 
 	// Current working directory - read access (may be upgraded to write below)
 	if cwd != "" {
 		if err := ruleset.AllowRead(cwd); err != nil && debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add cwd read path: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add cwd read path: %v\n", err)
 		}
 	}
 
 	// Home directory - read access
 	if home, err := os.UserHomeDir(); err == nil {
 		if err := ruleset.AllowRead(home); err != nil && debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add home read path: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add home read path: %v\n", err)
 		}
 	}
 
 	// /tmp - allow read+write (many programs need this)
 	if err := ruleset.AllowReadWrite("/tmp"); err != nil && debug {
-		fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add /tmp write path: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add /tmp write path: %v\n", err)
 	}
 
 	// /dev needs read+write for /dev/null, /dev/zero, /dev/tty, etc.
 	// Landlock doesn't support rules on device files directly, so we allow the whole /dev
 	if err := ruleset.AllowReadWrite("/dev"); err != nil && debug {
-		fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add /dev write path: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add /dev write path: %v\n", err)
 	}
 
 	// Socket paths for proxy communication
 	for _, p := range socketPaths {
 		dir := filepath.Dir(p)
 		if err := ruleset.AllowReadWrite(dir); err != nil && debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add socket path %s: %v\n", dir, err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add socket path %s: %v\n", dir, err)
 		}
 	}
 
@@ -119,7 +119,7 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 		expandedPaths := ExpandGlobPatterns(cfg.Filesystem.AllowWrite)
 		for _, p := range expandedPaths {
 			if err := ruleset.AllowReadWrite(p); err != nil && debug {
-				fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add write path %s: %v\n", p, err)
+				fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add write path %s: %v\n", p, err)
 			}
 		}
 		// Also add non-glob paths directly
@@ -127,7 +127,7 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 			if !ContainsGlobChars(p) {
 				normalized := NormalizePath(p)
 				if err := ruleset.AllowReadWrite(normalized); err != nil && debug {
-					fmt.Fprintf(os.Stderr, "[fence:landlock] Warning: failed to add write path %s: %v\n", normalized, err)
+					fmt.Fprintf(os.Stderr, "[greywall:landlock] Warning: failed to add write path %s: %v\n", normalized, err)
 				}
 			}
 		}
@@ -136,13 +136,13 @@ func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []strin
 	// Apply the ruleset
 	if err := ruleset.Apply(); err != nil {
 		if debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Failed to apply: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Failed to apply: %v\n", err)
 		}
 		return nil // Graceful fallback
 	}
 
 	if debug {
-		fmt.Fprintf(os.Stderr, "[fence:landlock] Applied restrictions (ABI v%d)\n", features.LandlockABI)
+		fmt.Fprintf(os.Stderr, "[greywall:landlock] Applied restrictions (ABI v%d)\n", features.LandlockABI)
 	}
 
 	return nil
@@ -212,7 +212,7 @@ func (l *LandlockRuleset) Initialize() error {
 	l.initialized = true
 
 	if l.debug {
-		fmt.Fprintf(os.Stderr, "[fence:landlock] Created ruleset (ABI v%d, fd=%d)\n", l.abiVersion, l.rulesetFd)
+		fmt.Fprintf(os.Stderr, "[greywall:landlock] Created ruleset (ABI v%d, fd=%d)\n", l.abiVersion, l.rulesetFd)
 	}
 
 	return nil
@@ -318,7 +318,7 @@ func (l *LandlockRuleset) addPathRule(path string, access uint64) error {
 	// Check if path exists
 	if _, err := os.Stat(absPath); os.IsNotExist(err) {
 		if l.debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Skipping non-existent path: %s\n", absPath)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Skipping non-existent path: %s\n", absPath)
 		}
 		return nil
 	}
@@ -327,7 +327,7 @@ func (l *LandlockRuleset) addPathRule(path string, access uint64) error {
 	fd, err := unix.Open(absPath, unix.O_PATH|unix.O_CLOEXEC, 0)
 	if err != nil {
 		if l.debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Failed to open path %s: %v\n", absPath, err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Failed to open path %s: %v\n", absPath, err)
 		}
 		return nil // Don't fail on paths we can't access
 	}
@@ -337,7 +337,7 @@ func (l *LandlockRuleset) addPathRule(path string, access uint64) error {
 	var stat unix.Stat_t
 	if err := unix.Fstat(fd, &stat); err != nil {
 		if l.debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Failed to fstat path %s: %v\n", absPath, err)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Failed to fstat path %s: %v\n", absPath, err)
 		}
 		return nil
 	}
@@ -370,7 +370,7 @@ func (l *LandlockRuleset) addPathRule(path string, access uint64) error {
 
 	if access == 0 {
 		if l.debug {
-			fmt.Fprintf(os.Stderr, "[fence:landlock] Skipping %s: no applicable access rights\n", absPath)
+			fmt.Fprintf(os.Stderr, "[greywall:landlock] Skipping %s: no applicable access rights\n", absPath)
 		}
 		return nil
 	}
@@ -391,7 +391,7 @@ func (l *LandlockRuleset) addPathRule(path string, access uint64) error {
 	}
 
 	if l.debug {
-		fmt.Fprintf(os.Stderr, "[fence:landlock] Added rule: %s (access=0x%x)\n", absPath, access)
+		fmt.Fprintf(os.Stderr, "[greywall:landlock] Added rule: %s (access=0x%x)\n", absPath, access)
 	}
 
 	return nil
@@ -420,7 +420,7 @@ func (l *LandlockRuleset) Apply() error {
 	}
 
 	if l.debug {
-		fmt.Fprintf(os.Stderr, "[fence:landlock] Ruleset applied to process\n")
+		fmt.Fprintf(os.Stderr, "[greywall:landlock] Ruleset applied to process\n")
 	}
 
 	return nil

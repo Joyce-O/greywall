@@ -115,7 +115,7 @@ jobs:
         run: make build-ci
 
       - name: Run smoke tests
-        run: FENCE_TEST_NETWORK=1 ./scripts/smoke_test.sh ./fence
+        run: GREYWALL_TEST_NETWORK=1 ./scripts/smoke_test.sh ./greywall
 
   test-macos:
     name: Test (macOS)
@@ -160,4 +160,4 @@ jobs:
         run: make build-ci
 
       - name: Run smoke tests
-        run: FENCE_TEST_NETWORK=1 ./scripts/smoke_test.sh ./fence
+        run: GREYWALL_TEST_NETWORK=1 ./scripts/smoke_test.sh ./greywall

@@ -1,32 +1,30 @@
-![Fence Banner](assets/fence-banner.png)
+![Greywall Banner](assets/greywall-banner.png)
 
-<div align="center">
+# Greywall
 
-![GitHub Release](https://img.shields.io/github/v/release/Use-Tusk/fence)
+**The sandboxing layer of the GreyHaven platform.**
 
-</div>
-
-Fence wraps commands in a sandbox that blocks network access by default and restricts filesystem operations based on configurable rules. It's most useful for running semi-trusted code (package installs, build scripts, CI jobs, unfamiliar repos) with controlled side effects, and it can also complement AI coding agents as defense-in-depth.
+Greywall wraps commands in a sandbox that blocks network access by default and restricts filesystem operations. It is the core sandboxing component of the GreyHaven platform, providing defense-in-depth for running untrusted code.
 
 ```bash
 # Block all network access (default)
-fence curl https://example.com  # → 403 Forbidden
+greywall curl https://example.com  # → 403 Forbidden
 
 # Allow specific domains
-fence -t code npm install  # → uses 'code' template with npm/pypi/etc allowed
+greywall -t code npm install  # → uses 'code' template with npm/pypi/etc allowed
 
 # Block dangerous commands
-fence -c "rm -rf /"  # → blocked by command deny rules
+greywall -c "rm -rf /"  # → blocked by command deny rules
 ```
 
-You can also think of Fence as a permission manager for your CLI agents. **Fence works with popular coding agents like Claude Code, Codex, Gemini CLI, Cursor Agent, OpenCode, Factory (Droid) CLI, etc.** See [agents.md](./docs/agents.md) for more details.
+Greywall also works as a permission manager for CLI agents. **Greywall works with popular coding agents like Claude Code, Codex, Gemini CLI, Cursor Agent, OpenCode, Factory (Droid) CLI, etc.** See [agents.md](./docs/agents.md) for more details.
 
 ## Install
 
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Use-Tusk/fence/main/install.sh | sh
+curl -fsSL https://gitea.app.monadical.io/monadical/greywall/raw/branch/main/install.sh | sh
 ```
 
 <details>
@@ -35,15 +33,15 @@ curl -fsSL https://raw.githubusercontent.com/Use-Tusk/fence/main/install.sh | sh
 **Go install:**
 
 ```bash
-go install github.com/Use-Tusk/fence/cmd/fence@latest
+go install gitea.app.monadical.io/monadical/greywall/cmd/greywall@latest
 ```
 
 **Build from source:**
 
 ```bash
-git clone https://github.com/Use-Tusk/fence
-cd fence
-go build -o fence ./cmd/fence
+git clone https://gitea.app.monadical.io/monadical/greywall
+cd greywall
+go build -o greywall ./cmd/greywall
 ```
 
 </details>
@@ -60,27 +58,27 @@ go build -o fence ./cmd/fence
 
 ```bash
 # Run command with all network blocked (no domains allowed by default)
-fence curl https://example.com
+greywall curl https://example.com
 
 # Run with shell expansion
-fence -c "echo hello && ls"
+greywall -c "echo hello && ls"
 
 # Enable debug logging
-fence -d curl https://example.com
+greywall -d curl https://example.com
 
 # Use a template
-fence -t code -- claude  # Runs Claude Code using `code` template config
+greywall -t code -- claude  # Runs Claude Code using `code` template config
 
 # Monitor mode (shows violations)
-fence -m npm install
+greywall -m npm install
 
 # Show all commands and options
-fence --help
+greywall --help
 ```
 
 ### Configuration
 
-Fence reads from `~/.config/fence/fence.json` by default (or `~/Library/Application Support/fence/fence.json` on macOS).
+Greywall reads from `~/.config/greywall/greywall.json` by default (or `~/Library/Application Support/greywall/greywall.json` on macOS).
 
 ```json
 {
@@ -91,12 +89,12 @@ Fence reads from `~/.config/fence/fence.json` by default (or `~/Library/Applicat
 }
 ```
 
-Use `fence --settings ./custom.json` to specify a different config.
+Use `greywall --settings ./custom.json` to specify a different config.
 
 ### Import from Claude Code
 
 ```bash
-fence import --claude --save
+greywall import --claude --save
 ```
 
 ## Features
@@ -109,7 +107,7 @@ fence import --claude --save
 - **Violation monitoring** - Real-time logging of blocked requests (`-m`)
 - **Cross-platform** - macOS (sandbox-exec) + Linux (bubblewrap)
 
-Fence can be used as a Go package or CLI tool.
+Greywall can be used as a Go package or CLI tool.
 
 ## Documentation
 
@@ -122,5 +120,7 @@ Fence can be used as a Go package or CLI tool.
 - [Examples](examples/)
 
 ## Attribution
+
+Greywall is based on [Fence](https://github.com/Use-Tusk/fence) by Use-Tusk.
 
 Inspired by Anthropic's [sandbox-runtime](https://github.com/anthropic-experimental/sandbox-runtime).

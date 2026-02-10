@@ -1,4 +1,4 @@
-// Package main implements the fence CLI.
+// Package main implements the greywall CLI.
 package main
 
 import (
@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/Use-Tusk/fence/internal/config"
-	"github.com/Use-Tusk/fence/internal/platform"
-	"github.com/Use-Tusk/fence/internal/sandbox"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/platform"
+	"gitea.app.monadical.io/monadical/greywall/internal/sandbox"
 	"github.com/spf13/cobra"
 )
 
@@ -45,29 +45,29 @@ func main() {
 	}
 
 	rootCmd := &cobra.Command{
-		Use:   "fence [flags] -- [command...]",
+		Use:   "greywall [flags] -- [command...]",
 		Short: "Run commands in a sandbox with network and filesystem restrictions",
-		Long: `fence is a command-line tool that runs commands in a sandboxed environment
+		Long: `greywall is a command-line tool that runs commands in a sandboxed environment
 with network and filesystem restrictions.
 
 By default, all network access is blocked. Use --proxy to route traffic through
 an external SOCKS5 proxy, or configure a proxy URL in your settings file at
-~/.config/fence/fence.json (or ~/Library/Application Support/fence/fence.json on macOS).
+~/.config/greywall/greywall.json (or ~/Library/Application Support/greywall/greywall.json on macOS).
 
-On Linux, fence uses tun2socks for truly transparent proxying: all TCP/UDP traffic
+On Linux, greywall uses tun2socks for truly transparent proxying: all TCP/UDP traffic
 from any binary is captured at the kernel level via a TUN device and forwarded
 through the external SOCKS5 proxy. No application awareness needed.
 
-On macOS, fence uses environment variables (best-effort) to direct traffic
+On macOS, greywall uses environment variables (best-effort) to direct traffic
 to the proxy.
 
 Examples:
-  fence -- curl https://example.com                          # Blocked (no proxy)
-  fence --proxy socks5://localhost:1080 -- curl https://example.com  # Via proxy
-  fence -- curl -s https://example.com                       # Use -- to separate flags
-  fence -c "echo hello && ls"                                # Run with shell expansion
-  fence --settings config.json npm install
-  fence -p 3000 -c "npm run dev"                             # Expose port 3000
+  greywall -- curl https://example.com                          # Blocked (no proxy)
+  greywall --proxy socks5://localhost:1080 -- curl https://example.com  # Via proxy
+  greywall -- curl -s https://example.com                       # Use -- to separate flags
+  greywall -c "echo hello && ls"                                # Run with shell expansion
+  greywall --settings config.json npm install
+  greywall -p 3000 -c "npm run dev"                             # Expose port 3000
 
 Configuration file format:
 {
@@ -112,7 +112,7 @@ Configuration file format:
 
 func runCommand(cmd *cobra.Command, args []string) error {
 	if showVersion {
-		fmt.Printf("fence - lightweight, container-free sandbox for running untrusted commands\n")
+		fmt.Printf("greywall - lightweight, container-free sandbox for running untrusted commands\n")
 		fmt.Printf("  Version: %s\n", version)
 		fmt.Printf("  Built:   %s\n", buildTime)
 		fmt.Printf("  Commit:  %s\n", gitCommit)
@@ -135,7 +135,7 @@ func runCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if debug {
-		fmt.Fprintf(os.Stderr, "[fence] Command: %s\n", command)
+		fmt.Fprintf(os.Stderr, "[greywall] Command: %s\n", command)
 	}
 
 	var ports []int
@@ -148,7 +148,7 @@ func runCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if debug && len(ports) > 0 {
-		fmt.Fprintf(os.Stderr, "[fence] Exposing ports: %v\n", ports)
+		fmt.Fprintf(os.Stderr, "[greywall] Exposing ports: %v\n", ports)
 	}
 
 	// Load config: settings file > default path > default config
@@ -169,7 +169,7 @@ func runCommand(cmd *cobra.Command, args []string) error {
 		}
 		if cfg == nil {
 			if debug {
-				fmt.Fprintf(os.Stderr, "[fence] No config found at %s, using default (block all network)\n", configPath)
+				fmt.Fprintf(os.Stderr, "[greywall] No config found at %s, using default (block all network)\n", configPath)
 			}
 			cfg = config.Default()
 		}
@@ -196,7 +196,7 @@ func runCommand(cmd *cobra.Command, args []string) error {
 		logMonitor = sandbox.NewLogMonitor(sandbox.GetSessionSuffix())
 		if logMonitor != nil {
 			if err := logMonitor.Start(); err != nil {
-				fmt.Fprintf(os.Stderr, "[fence] Warning: failed to start log monitor: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[greywall] Warning: failed to start log monitor: %v\n", err)
 			} else {
 				defer logMonitor.Stop()
 			}
@@ -209,13 +209,13 @@ func runCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if debug {
-		fmt.Fprintf(os.Stderr, "[fence] Sandboxed command: %s\n", sandboxedCommand)
+		fmt.Fprintf(os.Stderr, "[greywall] Sandboxed command: %s\n", sandboxedCommand)
 	}
 
 	hardenedEnv := sandbox.GetHardenedEnv()
 	if debug {
 		if stripped := sandbox.GetStrippedEnvVars(os.Environ()); len(stripped) > 0 {
-			fmt.Fprintf(os.Stderr, "[fence] Stripped dangerous env vars: %v\n", stripped)
+			fmt.Fprintf(os.Stderr, "[greywall] Stripped dangerous env vars: %v\n", stripped)
 		}
 	}
 
@@ -280,24 +280,24 @@ func newCompletionCmd(rootCmd *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",
 		Short: "Generate shell completion scripts",
-		Long: `Generate shell completion scripts for fence.
+		Long: `Generate shell completion scripts for greywall.
 
 Examples:
   # Bash (load in current session)
-  source <(fence completion bash)
+  source <(greywall completion bash)
 
   # Zsh (load in current session)
-  source <(fence completion zsh)
+  source <(greywall completion zsh)
 
   # Fish (load in current session)
-  fence completion fish | source
+  greywall completion fish | source
 
   # PowerShell (load in current session)
-  fence completion powershell | Out-String | Invoke-Expression
+  greywall completion powershell | Out-String | Invoke-Expression
 
 To persist completions, redirect output to the appropriate completions
 directory for your shell (e.g., /etc/bash_completion.d/ for bash,
-${fpath[1]}/_fence for zsh, ~/.config/fish/completions/fence.fish for fish).
+${fpath[1]}/_greywall for zsh, ~/.config/fish/completions/greywall.fish for fish).
 `,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
@@ -322,11 +322,11 @@ ${fpath[1]}/_fence for zsh, ~/.config/fish/completions/fence.fish for fish).
 
 // runLandlockWrapper runs in "wrapper mode" inside the sandbox.
 // It applies Landlock restrictions and then execs the user command.
-// Usage: fence --landlock-apply [--debug] -- <command...>
-// Config is passed via FENCE_CONFIG_JSON environment variable.
+// Usage: greywall --landlock-apply [--debug] -- <command...>
+// Config is passed via GREYWALL_CONFIG_JSON environment variable.
 func runLandlockWrapper() {
 	// Parse arguments: --landlock-apply [--debug] -- <command...>
-	args := os.Args[2:] // Skip "fence" and "--landlock-apply"
+	args := os.Args[2:] // Skip "greywall" and "--landlock-apply"
 
 	var debugMode bool
 	var cmdStart int
@@ -347,25 +347,25 @@ func runLandlockWrapper() {
 
 parseCommand:
 	if cmdStart >= len(args) {
-		fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Error: no command specified\n")
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Error: no command specified\n")
 		os.Exit(1)
 	}
 
 	command := args[cmdStart:]
 
 	if debugMode {
-		fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Applying Landlock restrictions\n")
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Applying Landlock restrictions\n")
 	}
 
 	// Only apply Landlock on Linux
 	if platform.Detect() == platform.Linux {
-		// Load config from environment variable (passed by parent fence process)
+		// Load config from environment variable (passed by parent greywall process)
 		var cfg *config.Config
-		if configJSON := os.Getenv("FENCE_CONFIG_JSON"); configJSON != "" {
+		if configJSON := os.Getenv("GREYWALL_CONFIG_JSON"); configJSON != "" {
 			cfg = &config.Config{}
 			if err := json.Unmarshal([]byte(configJSON), cfg); err != nil {
 				if debugMode {
-					fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Warning: failed to parse config: %v\n", err)
+					fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Warning: failed to parse config: %v\n", err)
 				}
 				cfg = nil
 			}
@@ -381,23 +381,23 @@ parseCommand:
 		err := sandbox.ApplyLandlockFromConfig(cfg, cwd, nil, debugMode)
 		if err != nil {
 			if debugMode {
-				fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Warning: Landlock not applied: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Warning: Landlock not applied: %v\n", err)
 			}
 			// Continue without Landlock - bwrap still provides isolation
 		} else if debugMode {
-			fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Landlock restrictions applied\n")
+			fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Landlock restrictions applied\n")
 		}
 	}
 
 	// Find the executable
 	execPath, err := exec.LookPath(command[0])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Error: command not found: %s\n", command[0])
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Error: command not found: %s\n", command[0])
 		os.Exit(127)
 	}
 
 	if debugMode {
-		fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Exec: %s %v\n", execPath, command[1:])
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Exec: %s %v\n", execPath, command[1:])
 	}
 
 	// Sanitize environment (strips LD_PRELOAD, etc.)
@@ -406,7 +406,7 @@ parseCommand:
 	// Exec the command (replaces this process)
 	err = syscall.Exec(execPath, command, hardenedEnv) //nolint:gosec
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[fence:landlock-wrapper] Exec failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Exec failed: %v\n", err)
 		os.Exit(1)
 	}
 }

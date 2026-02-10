@@ -1,10 +1,10 @@
 # Filesystem Sandbox Demo
 
-This demo shows how fence controls filesystem access with `allowWrite`, `denyWrite`, and `denyRead`.
+This demo shows how greywall controls filesystem access with `allowWrite`, `denyWrite`, and `denyRead`.
 
 ## What it demonstrates
 
-| Operation | Without Fence | With Fence |
+| Operation | Without Greywall | With Greywall |
 |-----------|---------------|------------|
 | Write to `./output/` | ✓ | ✓ (in allowWrite) |
 | Write to `./` | ✓ | ✗ (not in allowWrite) |
@@ -16,19 +16,19 @@ This demo shows how fence controls filesystem access with `allowWrite`, `denyWri
 
 ## Run the demo
 
-### Without fence (all writes succeed)
+### Without greywall (all writes succeed)
 
 ```bash
 python demo.py
 ```
 
-### With fence (unauthorized operations blocked)
+### With greywall (unauthorized operations blocked)
 
 ```bash
-fence --settings fence.json python demo.py
+greywall --settings greywall.json python demo.py
 ```
 
-## Fence config
+## Greywall config
 
 ```json
 {
@@ -58,7 +58,7 @@ fence --settings fence.json python demo.py
 
 ## Protected paths
 
-Fence also automatically protects certain paths regardless of config:
+Greywall also automatically protects certain paths regardless of config:
 
 - Shell configs: `.bashrc`, `.zshrc`, `.profile`
 - Git hooks: `.git/hooks/*`

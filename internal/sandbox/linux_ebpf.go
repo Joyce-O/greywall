@@ -39,7 +39,7 @@ func (m *EBPFMonitor) Start() error {
 	features := DetectLinuxFeatures()
 	if !features.HasEBPF {
 		if m.debug {
-			fmt.Fprintf(os.Stderr, "[fence:ebpf] eBPF monitoring not available (need CAP_BPF or root)\n")
+			fmt.Fprintf(os.Stderr, "[greywall:ebpf] eBPF monitoring not available (need CAP_BPF or root)\n")
 		}
 		return nil
 	}
@@ -51,14 +51,14 @@ func (m *EBPFMonitor) Start() error {
 	// Try multiple eBPF tracing approaches
 	if err := m.tryBpftrace(ctx); err != nil {
 		if m.debug {
-			fmt.Fprintf(os.Stderr, "[fence:ebpf] bpftrace not available: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:ebpf] bpftrace not available: %v\n", err)
 		}
 		// Fall back to other methods
 		go m.traceWithPerfEvents()
 	}
 
 	if m.debug {
-		fmt.Fprintf(os.Stderr, "[fence:ebpf] Started eBPF monitoring for PID %d\n", m.pid)
+		fmt.Fprintf(os.Stderr, "[greywall:ebpf] Started eBPF monitoring for PID %d\n", m.pid)
 	}
 
 	return nil
@@ -101,7 +101,7 @@ func (m *EBPFMonitor) tryBpftrace(ctx context.Context) error {
 	script := m.generateBpftraceScript()
 
 	// Write script to temp file
-	tmpFile, err := os.CreateTemp("", "fence-ebpf-*.bt")
+	tmpFile, err := os.CreateTemp("", "greywall-ebpf-*.bt")
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
@@ -136,7 +136,7 @@ func (m *EBPFMonitor) tryBpftrace(ctx context.Context) error {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if m.debug {
-				fmt.Fprintf(os.Stderr, "[fence:ebpf:trace] %s\n", line)
+				fmt.Fprintf(os.Stderr, "[greywall:ebpf:trace] %s\n", line)
 			}
 			if violation := m.parseBpftraceOutput(line); violation != "" {
 				fmt.Fprintf(os.Stderr, "%s\n", violation)
@@ -150,7 +150,7 @@ func (m *EBPFMonitor) tryBpftrace(ctx context.Context) error {
 			scanner := bufio.NewScanner(stderr)
 			for scanner.Scan() {
 				line := scanner.Text()
-				fmt.Fprintf(os.Stderr, "[fence:ebpf:err] %s\n", line)
+				fmt.Fprintf(os.Stderr, "[greywall:ebpf:err] %s\n", line)
 			}
 		}()
 	}
@@ -173,7 +173,7 @@ func (m *EBPFMonitor) generateBpftraceScript() string {
 	script := fmt.Sprintf(`
 BEGIN
 {
-    printf("fence:ebpf monitoring started for sandbox PID %%d (filtering pid >= %%d)\n", %d, %d);
+    printf("greywall:ebpf monitoring started for sandbox PID %%d (filtering pid >= %%d)\n", %d, %d);
 }
 
 // Monitor filesystem errors (EPERM=-1, EACCES=-13, EROFS=-30)
@@ -227,7 +227,7 @@ func (m *EBPFMonitor) parseBpftraceOutput(line string) string {
 	errorName := getErrnoName(ret)
 	timestamp := time.Now().Format("15:04:05")
 
-	return fmt.Sprintf("[fence:ebpf] %s ✗ %s: %s (%s, pid=%d)",
+	return fmt.Sprintf("[greywall:ebpf] %s ✗ %s: %s (%s, pid=%d)",
 		timestamp, syscall, errorName, comm, pid)
 }
 
@@ -239,7 +239,7 @@ func (m *EBPFMonitor) traceWithPerfEvents() {
 	tracePipe := "/sys/kernel/debug/tracing/trace_pipe"
 	if _, err := os.Stat(tracePipe); err != nil {
 		if m.debug {
-			fmt.Fprintf(os.Stderr, "[fence:ebpf] trace_pipe not available\n")
+			fmt.Fprintf(os.Stderr, "[greywall:ebpf] trace_pipe not available\n")
 		}
 		return
 	}
@@ -247,7 +247,7 @@ func (m *EBPFMonitor) traceWithPerfEvents() {
 	f, err := os.Open(tracePipe)
 	if err != nil {
 		if m.debug {
-			fmt.Fprintf(os.Stderr, "[fence:ebpf] Failed to open trace_pipe: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[greywall:ebpf] Failed to open trace_pipe: %v\n", err)
 		}
 		return
 	}
@@ -317,10 +317,10 @@ func (v *ViolationEvent) FormatViolation() string {
 	errName := getErrnoName(-v.Errno)
 
 	if v.Path != "" {
-		return fmt.Sprintf("[fence:ebpf] %s ✗ %s: %s (%s, %s:%d)",
+		return fmt.Sprintf("[greywall:ebpf] %s ✗ %s: %s (%s, %s:%d)",
 			timestamp, v.Operation, v.Path, errName, v.Comm, v.PID)
 	}
-	return fmt.Sprintf("[fence:ebpf] %s ✗ %s: %s (%s:%d)",
+	return fmt.Sprintf("[greywall:ebpf] %s ✗ %s: %s (%s:%d)",
 		timestamp, v.Operation, errName, v.Comm, v.PID)
 }
 

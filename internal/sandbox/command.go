@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // CommandBlockedError is returned when a command is blocked by policy.

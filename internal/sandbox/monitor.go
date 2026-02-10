@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Use-Tusk/fence/internal/platform"
+	"gitea.app.monadical.io/monadical/greywall/internal/platform"
 )
 
 // LogMonitor monitors sandbox violations via macOS log stream.
@@ -138,9 +138,9 @@ func parseViolation(line string) string {
 	timestamp := time.Now().Format("15:04:05")
 
 	if details != "" {
-		return fmt.Sprintf("[fence:logstream] %s ✗ %s %s (%s:%s)", timestamp, operation, details, process, pid)
+		return fmt.Sprintf("[greywall:logstream] %s ✗ %s %s (%s:%s)", timestamp, operation, details, process, pid)
 	}
-	return fmt.Sprintf("[fence:logstream] %s ✗ %s (%s:%s)", timestamp, operation, process, pid)
+	return fmt.Sprintf("[greywall:logstream] %s ✗ %s (%s:%s)", timestamp, operation, process, pid)
 }
 
 // shouldShowViolation returns true if this violation type should be displayed.

@@ -1,6 +1,6 @@
 # Dev Server + Redis Demo
 
-This demo shows how fence controls network access: allowing specific external domains while blocking (or allowing) localhost connections.
+This demo shows how greywall controls network access: allowing specific external domains while blocking (or allowing) localhost connections.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ npm install
 This shows that requests to Redis (local service) works, but external requests are blocked.
 
 ```bash
-fence -p 3000 --settings fence-external-blocked.json npm start
+greywall -p 3000 --settings greywall-external-blocked.json npm start
 ```
 
 Test it:
@@ -39,7 +39,7 @@ curl http://localhost:3000/api/external
 This shows the opposite: whitelisted external domains work, but Redis (localhost) is blocked.
 
 ```bash
-fence -p 3000 --settings fence-external-only.json npm start
+greywall -p 3000 --settings greywall-external-only.json npm start
 ```
 
 You will immediately notice that Redis connection is blocked on app startup:
@@ -62,8 +62,8 @@ curl http://localhost:3000/api/users
 
 | Config | Redis (localhost) | External (httpbin.org) |
 |--------|-------------------|------------------------|
-| `fence-external-blocked.json` | ✓ Allowed | ✗ Blocked |
-| `fence-external-only.json` | ✗ Blocked | ✓ Allowed |
+| `greywall-external-blocked.json` | ✓ Allowed | ✗ Blocked |
+| `greywall-external-only.json` | ✗ Blocked | ✓ Allowed |
 
 ## Key Settings
 
@@ -75,7 +75,7 @@ curl http://localhost:3000/api/users
 
 ## Note: Node.js Proxy Support
 
-Node.js's native `http`/`https` modules don't respect proxy environment variables. This demo uses [`undici`](https://github.com/nodejs/undici) with `ProxyAgent` to route requests through fence's proxy:
+Node.js's native `http`/`https` modules don't respect proxy environment variables. This demo uses [`undici`](https://github.com/nodejs/undici) with `ProxyAgent` to route requests through greywall's proxy:
 
 ```javascript
 import { ProxyAgent, fetch } from "undici";
@@ -86,4 +86,4 @@ const response = await fetch(url, {
 });
 ```
 
-Without this, external HTTP requests would fail with connection errors (the sandbox blocks them) rather than going through fence's proxy.
+Without this, external HTTP requests would fail with connection errors (the sandbox blocks them) rather than going through greywall's proxy.

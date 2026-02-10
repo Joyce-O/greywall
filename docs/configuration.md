@@ -1,6 +1,6 @@
 # Configuration
 
-Fence reads settings from `~/.config/fence/fence.json` by default (or `~/Library/Application Support/fence/fence.json` on macOS). Legacy `~/.fence.json` is also supported. Pass `--settings ./fence.json` to use a custom path. Config files support JSONC.
+Greywall reads settings from `~/.config/greywall/greywall.json` by default (or `~/Library/Application Support/greywall/greywall.json` on macOS). Legacy `~/.greywall.json` is also supported. Pass `--settings ./greywall.json` to use a custom path. Config files support JSONC.
 
 Example config:
 
@@ -60,7 +60,7 @@ You can also extend other config files using absolute or relative paths:
 
 ```json
 {
-  "extends": "/etc/fence/company-base.json",
+  "extends": "/etc/greywall/company-base.json",
   "filesystem": {
     "denyRead": ["~/company-secrets/**"]
   }
@@ -143,7 +143,7 @@ Example:
 
 ### Default Denied Commands
 
-When `useDefaults` is `true` (the default), fence blocks these dangerous commands:
+When `useDefaults` is `true` (the default), greywall blocks these dangerous commands:
 
 - System control: `shutdown`, `reboot`, `halt`, `poweroff`, `init 0/6`
 - Kernel manipulation: `insmod`, `rmmod`, `modprobe`, `kexec`
@@ -155,7 +155,7 @@ To disable defaults: `"useDefaults": false`
 
 ### Command Detection
 
-Fence detects blocked commands in:
+Greywall detects blocked commands in:
 
 - Direct commands: `git push origin main`
 - Command chains: `ls && git push` or `ls; git push`
@@ -260,26 +260,26 @@ SSH host patterns support wildcards anywhere:
 
 ## Importing from Claude Code
 
-If you've been using Claude Code and have already built up permission rules, you can import them into fence:
+If you've been using Claude Code and have already built up permission rules, you can import them into greywall:
 
 ```bash
 # Preview import (prints JSON to stdout)
-fence import --claude
+greywall import --claude
 
 # Save to the default config path
-fence import --claude --save
+greywall import --claude --save
 
 # Import from a specific file
-fence import --claude -f ~/.claude/settings.json --save
+greywall import --claude -f ~/.claude/settings.json --save
 
 # Save to a specific output file
-fence import --claude -o ./fence.json
+greywall import --claude -o ./greywall.json
 
 # Import without extending any template (minimal config)
-fence import --claude --no-extend --save
+greywall import --claude --no-extend --save
 
 # Import and extend a different template
-fence import --claude --extend local-dev-server --save
+greywall import --claude --extend local-dev-server --save
 ```
 
 ### Default Template
@@ -294,7 +294,7 @@ Use `--no-extend` if you want a minimal config without these defaults, or `--ext
 
 ### Permission Mapping
 
-| Claude Code | Fence |
+| Claude Code | Greywall |
 |-------------|-------|
 | `Bash(xyz)` allow | `command.allow: ["xyz"]` |
 | `Bash(xyz:*)` deny | `command.deny: ["xyz"]` |
@@ -302,9 +302,9 @@ Use `--no-extend` if you want a minimal config without these defaults, or `--ext
 | `Write(path)` allow | `filesystem.allowWrite: [path]` |
 | `Write(path)` deny | `filesystem.denyWrite: [path]` |
 | `Edit(path)` | Same as `Write(path)` |
-| `ask` rules | Converted to deny (fence doesn't support interactive prompts) |
+| `ask` rules | Converted to deny (greywall doesn't support interactive prompts) |
 
-Global tool permissions (e.g., bare `Read`, `Write`, `Grep`) are skipped since fence uses path/command-based rules.
+Global tool permissions (e.g., bare `Read`, `Write`, `Grep`) are skipped since greywall uses path/command-based rules.
 
 ## See Also
 

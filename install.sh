@@ -1,17 +1,17 @@
 #!/bin/sh
 set -e
 
-# Fence Installer (Linux/macOS only)
+# Greywall Installer (Linux/macOS only)
 # For Windows, we recommend using WSL.
 # Usage (latest):
-#   curl -fsSL https://raw.githubusercontent.com/Use-Tusk/fence/main/install.sh | sh
+#   curl -fsSL https://gitea.app.monadical.io/monadical/greywall/raw/branch/main/install.sh | sh
 # Usage (specific version):
-#   curl -fsSL https://raw.githubusercontent.com/Use-Tusk/fence/main/install.sh | sh -s -- v0.1.0
+#   curl -fsSL https://gitea.app.monadical.io/monadical/greywall/raw/branch/main/install.sh | sh -s -- v0.1.0
 # Or via env var:
-#   curl -fsSL https://raw.githubusercontent.com/Use-Tusk/fence/main/install.sh | FENCE_VERSION=0.1.0 sh
+#   curl -fsSL https://gitea.app.monadical.io/monadical/greywall/raw/branch/main/install.sh | GREYWALL_VERSION=0.1.0 sh
 
-REPO="Use-Tusk/fence"
-BINARY_NAME="fence"
+REPO="monadical/greywall"
+BINARY_NAME="greywall"
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
@@ -39,8 +39,8 @@ case "$ARCH" in
     ;;
 esac
 
-# Determine version to install: use first arg or FENCE_VERSION env var; otherwise fallback to latest
-REQUESTED_VERSION="${1:-${FENCE_VERSION:-}}"
+# Determine version to install: use first arg or GREYWALL_VERSION env var; otherwise fallback to latest
+REQUESTED_VERSION="${1:-${GREYWALL_VERSION:-}}"
 if [ -n "$REQUESTED_VERSION" ]; then
   case "$REQUESTED_VERSION" in
     v*) VERSION_TAG="$REQUESTED_VERSION" ;;
@@ -48,11 +48,11 @@ if [ -n "$REQUESTED_VERSION" ]; then
   esac
 else
   # Try manifest first (fast, no rate limits)
-  VERSION_TAG=$(curl -sL "https://use-tusk.github.io/fence/latest.txt" 2>/dev/null || echo "")
+  VERSION_TAG=$(curl -sL "https://gitea.app.monadical.io/monadical/greywall/latest.txt" 2>/dev/null || echo "")
   
   # Fallback to GitHub API if manifest fails
   if [ -z "$VERSION_TAG" ]; then
-    VERSION_TAG=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    VERSION_TAG=$(curl -s "https://gitea.app.monadical.io/api/v1/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
   fi
 fi
 
@@ -75,12 +75,12 @@ TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
 echo "Downloading from $DOWNLOAD_URL..."
-if ! curl -fsSL -o fence.tar.gz "$DOWNLOAD_URL"; then
+if ! curl -fsSL -o greywall.tar.gz "$DOWNLOAD_URL"; then
   echo "Error: Failed to download release"
   exit 1
 fi
 
-tar -xzf fence.tar.gz
+tar -xzf greywall.tar.gz
 
 # Install to /usr/local/bin or ~/.local/bin
 INSTALL_DIR="/usr/local/bin"
@@ -97,9 +97,9 @@ chmod +x "$INSTALL_DIR/$BINARY_NAME"
 cd - > /dev/null
 rm -rf "$TMP_DIR"
 
-echo "Fence $VERSION_TAG installed successfully!"
+echo "Greywall $VERSION_TAG installed successfully!"
 echo ""
-echo "Run 'fence --help' to get started."
+echo "Run 'greywall --help' to get started."
 
 # Check if install dir is in PATH
 case ":$PATH:" in

@@ -2,9 +2,9 @@
 
 ## Nested Sandboxing Not Supported
 
-Fence cannot run inside another sandbox that uses the same underlying technology.
+Greywall cannot run inside another sandbox that uses the same underlying technology.
 
-**macOS (Seatbelt)**: If you try to run fence inside an existing `sandbox-exec` sandbox (e.g., Nix's Darwin build sandbox), you'll see:
+**macOS (Seatbelt)**: If you try to run greywall inside an existing `sandbox-exec` sandbox (e.g., Nix's Darwin build sandbox), you'll see:
 
 ```text
 Sandbox: sandbox-exec(...) deny(1) forbidden-sandbox-reinit
@@ -12,11 +12,11 @@ Sandbox: sandbox-exec(...) deny(1) forbidden-sandbox-reinit
 
 This is a macOS kernel limitation - nested Seatbelt sandboxes are not allowed. There is no workaround.
 
-**Linux (Landlock)**: Landlock supports stacking (nested restrictions), but fence's test binaries cannot use the Landlock wrapper (see [Testing docs](testing.md#sandboxed-build-environments-nix-etc)).
+**Linux (Landlock)**: Landlock supports stacking (nested restrictions), but greywall's test binaries cannot use the Landlock wrapper (see [Testing docs](testing.md#sandboxed-build-environments-nix-etc)).
 
 ## "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted" (Linux)
 
-This error occurs when fence tries to create a network namespace but the environment lacks the `CAP_NET_ADMIN` capability. This is common in:
+This error occurs when greywall tries to create a network namespace but the environment lacks the `CAP_NET_ADMIN` capability. This is common in:
 
 - **Docker containers** (unless run with `--privileged` or `--cap-add=NET_ADMIN`)
 - **GitHub Actions** and other CI runners
@@ -25,7 +25,7 @@ This error occurs when fence tries to create a network namespace but the environ
 
 **What happens now:**
 
-Fence automatically detects this limitation and falls back to running **without network namespace isolation**. The sandbox still provides:
+Greywall automatically detects this limitation and falls back to running **without network namespace isolation**. The sandbox still provides:
 
 - Filesystem restrictions (read-only root, allowWrite paths)
 - PID namespace isolation
@@ -41,7 +41,7 @@ Fence automatically detects this limitation and falls back to running **without 
 **To check if your environment supports network namespaces:**
 
 ```bash
-fence --linux-features
+greywall --linux-features
 ```
 
 Look for "Network namespace (--unshare-net): true/false"
@@ -51,7 +51,7 @@ Look for "Network namespace (--unshare-net): true/false"
 1. **Run with elevated privileges:**
 
    ```bash
-   sudo fence <command>
+   sudo greywall <command>
    ```
 
 2. **In Docker, add capability:**
@@ -96,20 +96,20 @@ On most systems with package-manager-installed bwrap, this error shouldn't occur
 This usually means:
 
 - the process tried to reach a domain that is **not allowed**, and
-- the request went through fence's HTTP proxy, which returned `403`.
+- the request went through greywall's HTTP proxy, which returned `403`.
 
 Fix:
 
 - Run with monitor mode to see what was blocked:
-  - `fence -m <command>`
+  - `greywall -m <command>`
 - Add the required destination(s) to `network.allowedDomains`.
 
-## "It works outside fence but not inside"
+## "It works outside greywall but not inside"
 
 Start with:
 
-- `fence -m <command>` to see what's being denied
-- `fence -d <command>` to see full proxy and sandbox detail
+- `greywall -m <command>` to see what's being denied
+- `greywall -d <command>` to see full proxy and sandbox detail
 
 Common causes:
 
@@ -134,7 +134,7 @@ const response = await fetch(url, {
 });
 ```
 
-Fence's OS-level sandbox should still block direct connections; the above makes your requests go through the filtering proxy so allowlisting works as intended.
+Greywall's OS-level sandbox should still block direct connections; the above makes your requests go through the filtering proxy so allowlisting works as intended.
 
 ## Local services (Redis/Postgres/etc.) fail inside the sandbox
 
@@ -156,7 +156,7 @@ If you're running a server inside the sandbox that must accept connections:
 Writes are denied by default.
 
 - Add the minimum required writable directories to `filesystem.allowWrite`.
-- Protect sensitive targets with `filesystem.denyWrite` (and note fence protects some targets regardless).
+- Protect sensitive targets with `filesystem.denyWrite` (and note greywall protects some targets regardless).
 
 Example:
 

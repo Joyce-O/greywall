@@ -18,19 +18,19 @@ Goal: allow Python dependency fetching while keeping egress minimal.
 Run:
 
 ```bash
-fence --settings ./fence.json pip install -r requirements.txt
+greywall --settings ./greywall.json pip install -r requirements.txt
 ```
 
 For Poetry:
 
 ```bash
-fence --settings ./fence.json poetry install
+greywall --settings ./greywall.json poetry install
 ```
 
 ## Iterate with monitor mode
 
 ```bash
-fence -m --settings ./fence.json poetry install
+greywall -m --settings ./greywall.json poetry install
 ```
 
 If you use private indexes, add those domains explicitly.

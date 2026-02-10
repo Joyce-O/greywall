@@ -134,8 +134,8 @@ func TestGenerateProxyEnvVars(t *testing.T) {
 			name:     "no proxy",
 			proxyURL: "",
 			wantEnvs: []string{
-				"FENCE_SANDBOX=1",
-				"TMPDIR=/tmp/fence",
+				"GREYWALL_SANDBOX=1",
+				"TMPDIR=/tmp/greywall",
 			},
 			dontWant: []string{
 				"HTTP_PROXY=",
@@ -147,7 +147,7 @@ func TestGenerateProxyEnvVars(t *testing.T) {
 			name:     "socks5 proxy",
 			proxyURL: "socks5://localhost:1080",
 			wantEnvs: []string{
-				"FENCE_SANDBOX=1",
+				"GREYWALL_SANDBOX=1",
 				"ALL_PROXY=socks5://localhost:1080",
 				"all_proxy=socks5://localhost:1080",
 				"HTTP_PROXY=socks5://localhost:1080",
@@ -162,7 +162,7 @@ func TestGenerateProxyEnvVars(t *testing.T) {
 			name:     "socks5h proxy",
 			proxyURL: "socks5h://proxy.example.com:1080",
 			wantEnvs: []string{
-				"FENCE_SANDBOX=1",
+				"GREYWALL_SANDBOX=1",
 				"ALL_PROXY=socks5h://proxy.example.com:1080",
 				"HTTP_PROXY=socks5h://proxy.example.com:1080",
 			},

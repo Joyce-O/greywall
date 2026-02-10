@@ -1,11 +1,11 @@
 # Library Usage (Go)
 
-Fence can be used as a Go library to sandbox commands programmatically.
+Greywall can be used as a Go library to sandbox commands programmatically.
 
 ## Installation
 
 ```bash
-go get github.com/Use-Tusk/fence
+go get gitea.app.monadical.io/monadical/greywall
 ```
 
 ## Quick Start
@@ -17,25 +17,25 @@ import (
     "fmt"
     "os/exec"
 
-    "github.com/Use-Tusk/fence/pkg/fence"
+    "gitea.app.monadical.io/monadical/greywall/pkg/greywall"
 )
 
 func main() {
     // Check platform support
-    if !fence.IsSupported() {
+    if !greywall.IsSupported() {
         fmt.Println("Sandboxing not supported on this platform")
         return
     }
 
     // Create config
-    cfg := &fence.Config{
-        Network: fence.NetworkConfig{
+    cfg := &greywall.Config{
+        Network: greywall.NetworkConfig{
             AllowedDomains: []string{"api.example.com"},
         },
     }
 
     // Create and initialize manager
-    manager := fence.NewManager(cfg, false, false)
+    manager := greywall.NewManager(cfg, false, false)
     defer manager.Cleanup()
 
     if err := manager.Initialize(); err != nil {
@@ -64,7 +64,7 @@ func main() {
 Returns `true` if the current platform supports sandboxing (macOS or Linux).
 
 ```go
-if !fence.IsSupported() {
+if !greywall.IsSupported() {
     log.Fatal("Platform not supported")
 }
 ```
@@ -74,7 +74,7 @@ if !fence.IsSupported() {
 Returns a default configuration with all network blocked.
 
 ```go
-cfg := fence.DefaultConfig()
+cfg := greywall.DefaultConfig()
 cfg.Network.AllowedDomains = []string{"example.com"}
 ```
 
@@ -83,18 +83,18 @@ cfg.Network.AllowedDomains = []string{"example.com"}
 Loads configuration from a JSON file. Supports JSONC (comments allowed).
 
 ```go
-cfg, err := fence.LoadConfig(fence.DefaultConfigPath())
+cfg, err := greywall.LoadConfig(greywall.DefaultConfigPath())
 if err != nil {
     log.Fatal(err)
 }
 if cfg == nil {
-    cfg = fence.DefaultConfig() // File doesn't exist
+    cfg = greywall.DefaultConfig() // File doesn't exist
 }
 ```
 
 #### `DefaultConfigPath() string`
 
-Returns the default config file path (`~/.config/fence/fence.json` on Linux, `~/Library/Application Support/fence/fence.json` on macOS, with fallback to legacy `~/.fence.json`).
+Returns the default config file path (`~/.config/greywall/greywall.json` on Linux, `~/Library/Application Support/greywall/greywall.json` on macOS, with fallback to legacy `~/.greywall.json`).
 
 #### `NewManager(cfg *Config, debug, monitor bool) *Manager`
 
@@ -113,7 +113,7 @@ Creates a new sandbox manager.
 Sets up sandbox infrastructure (starts HTTP and SOCKS proxies). Called automatically by `WrapCommand` if not already initialized.
 
 ```go
-manager := fence.NewManager(cfg, false, false)
+manager := greywall.NewManager(cfg, false, false)
 defer manager.Cleanup()
 
 if err := manager.Initialize(); err != nil {
@@ -222,8 +222,8 @@ type SSHConfig struct {
 ### Allow specific domains
 
 ```go
-cfg := &fence.Config{
-    Network: fence.NetworkConfig{
+cfg := &greywall.Config{
+    Network: greywall.NetworkConfig{
         AllowedDomains: []string{
             "registry.npmjs.org",
             "*.github.com",
@@ -236,8 +236,8 @@ cfg := &fence.Config{
 ### Restrict filesystem access
 
 ```go
-cfg := &fence.Config{
-    Filesystem: fence.FilesystemConfig{
+cfg := &greywall.Config{
+    Filesystem: greywall.FilesystemConfig{
         AllowWrite: []string{".", "/tmp"},
         DenyRead:   []string{"~/.ssh", "~/.aws"},
     },
@@ -247,8 +247,8 @@ cfg := &fence.Config{
 ### Block dangerous commands
 
 ```go
-cfg := &fence.Config{
-    Command: fence.CommandConfig{
+cfg := &greywall.Config{
+    Command: greywall.CommandConfig{
         Deny: []string{
             "rm -rf /",
             "git push",
@@ -261,7 +261,7 @@ cfg := &fence.Config{
 ### Expose dev server port
 
 ```go
-manager := fence.NewManager(cfg, false, false)
+manager := greywall.NewManager(cfg, false, false)
 manager.SetExposedPorts([]int{3000})
 defer manager.Cleanup()
 
@@ -271,12 +271,12 @@ wrapped, _ := manager.WrapCommand("npm run dev")
 ### Load and extend config
 
 ```go
-cfg, err := fence.LoadConfig(fence.DefaultConfigPath())
+cfg, err := greywall.LoadConfig(greywall.DefaultConfigPath())
 if err != nil {
     log.Fatal(err)
 }
 if cfg == nil {
-    cfg = fence.DefaultConfig()
+    cfg = greywall.DefaultConfig()
 }
 
 // Add additional restrictions

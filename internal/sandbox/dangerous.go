@@ -39,14 +39,14 @@ func GetDefaultWritePaths() []string {
 		"/dev/tty",
 		"/dev/dtracehelper",
 		"/dev/autofs_nowait",
-		"/tmp/fence",
-		"/private/tmp/fence",
+		"/tmp/greywall",
+		"/private/tmp/greywall",
 	}
 
 	if home != "" {
 		paths = append(paths,
 			filepath.Join(home, ".npm/_logs"),
-			filepath.Join(home, ".fence/debug"),
+			filepath.Join(home, ".greywall/debug"),
 		)
 	}
 

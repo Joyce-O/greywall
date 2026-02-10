@@ -1,6 +1,6 @@
-# Using Fence with AI Agents
+# Using Greywall with AI Agents
 
-Many popular coding agents already include sandboxing. Fence can still be useful when you want a tool-agnostic policy layer that works the same way across:
+Many popular coding agents already include sandboxing. Greywall can still be useful when you want a tool-agnostic policy layer that works the same way across:
 
 - local developer machines
 - CI jobs
@@ -15,7 +15,7 @@ Treat an agent as "semi-trusted automation":
 - Allowlist only the network destinations you actually need
 - Use `-m` (monitor mode) to audit blocked attempts and tighten policy
 
-Fence can also reduce the risk of running agents with fewer interactive permission prompts (e.g. "skip permissions"), as long as your Fence config tightly scopes writes and outbound destinations. It's defense-in-depth, not a substitute for the agent's own safeguards.
+Greywall can also reduce the risk of running agents with fewer interactive permission prompts (e.g. "skip permissions"), as long as your Greywall config tightly scopes writes and outbound destinations. It's defense-in-depth, not a substitute for the agent's own safeguards.
 
 ## Example: API-only agent
 
@@ -33,7 +33,7 @@ Fence can also reduce the risk of running agents with fewer interactive permissi
 Run:
 
 ```bash
-fence --settings ./fence.json <agent-command>
+greywall --settings ./greywall.json <agent-command>
 ```
 
 ## Popular CLI coding agents
@@ -43,7 +43,7 @@ We provide these template for guardrailing CLI coding agents:
 - [`code`](/internal/templates/code.json) - Strict deny-by-default network filtering via proxy. Works with agents that respect `HTTP_PROXY`. Blocks cloud metadata APIs, protects secrets, restricts dangerous commands.
 - [`code-relaxed`](/internal/templates/code-relaxed.json) - Allows direct network connections for agents that ignore `HTTP_PROXY`. Same filesystem/command protections as `code`, but `deniedDomains` only enforced for proxy-respecting apps.
 
-You can use it like `fence -t code -- claude`.
+You can use it like `greywall -t code -- claude`.
 
 | Agent | Works with template | Notes |
 |-------|--------| ----- |
@@ -60,7 +60,7 @@ Note: On Linux, if OpenCode or Gemini CLI is installed via Linuxbrew, Landlock c
 
 ## Protecting your environment
 
-Fence includes additional "dangerous file protection" (writes blocked regardless of config) to reduce persistence and environment-tampering vectors like:
+Greywall includes additional "dangerous file protection" (writes blocked regardless of config) to reduce persistence and environment-tampering vectors like:
 
 - `.git/hooks/*`
 - shell startup files (`.zshrc`, `.bashrc`, etc.)

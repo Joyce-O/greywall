@@ -3,7 +3,7 @@ GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOMOD=$(GOCMD) mod
-BINARY_NAME=fence
+BINARY_NAME=greywall
 BINARY_UNIX=$(BINARY_NAME)_unix
 TUN2SOCKS_VERSION=v2.5.2
 TUN2SOCKS_BIN_DIR=internal/sandbox/bin
@@ -29,14 +29,14 @@ download-tun2socks:
 
 build: download-tun2socks
 	@echo "Building $(BINARY_NAME)..."
-	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/fence
+	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/greywall
 
 build-ci: download-tun2socks
 	@echo "CI: Building $(BINARY_NAME) with version info..."
 	$(eval VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev"))
 	$(eval BUILD_TIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ'))
 	$(eval GIT_COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo "unknown"))
-	$(GOBUILD) -ldflags "-s -w -X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X main.gitCommit=$(GIT_COMMIT)" -o $(BINARY_NAME) -v ./cmd/fence
+	$(GOBUILD) -ldflags "-s -w -X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X main.gitCommit=$(GIT_COMMIT)" -o $(BINARY_NAME) -v ./cmd/greywall
 
 test:
 	@echo "Running tests..."
@@ -61,11 +61,11 @@ deps:
 
 build-linux: download-tun2socks
 	@echo "Building for Linux..."
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) -v ./cmd/fence
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) -v ./cmd/greywall
 
 build-darwin:
 	@echo "Building for macOS..."
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BINARY_NAME)_darwin -v ./cmd/fence
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BINARY_NAME)_darwin -v ./cmd/greywall
 
 install-lint-tools:
 	@echo "Installing linting tools..."

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Use-Tusk/fence/internal/config"
-	"github.com/Use-Tusk/fence/internal/platform"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/platform"
 )
 
 // Manager handles sandbox initialization and command wrapping.
@@ -153,6 +153,6 @@ func (m *Manager) Cleanup() {
 
 func (m *Manager) logDebug(format string, args ...interface{}) {
 	if m.debug {
-		fmt.Fprintf(os.Stderr, "[fence] "+format+"\n", args...)
+		fmt.Fprintf(os.Stderr, "[greywall] "+format+"\n", args...)
 	}
 }

@@ -1,6 +1,6 @@
 # Benchmarking
 
-This document describes how to run, interpret, and compare sandbox performance benchmarks for Fence.
+This document describes how to run, interpret, and compare sandbox performance benchmarks for Greywall.
 
 ## Quick Start
 
@@ -29,9 +29,9 @@ go test -run=^$ -bench=. -benchmem ./internal/sandbox/...
 
 ### Layer 1: CLI Benchmarks (`scripts/benchmark.sh`)
 
-**What it measures**: Real-world agent cost - full `fence` invocation including proxy startup, socat bridges (Linux), and sandbox-exec/bwrap setup.
+**What it measures**: Real-world agent cost - full `greywall` invocation including proxy startup, socat bridges (Linux), and sandbox-exec/bwrap setup.
 
-This is the most realistic benchmark for understanding the cost of running agent commands through Fence.
+This is the most realistic benchmark for understanding the cost of running agent commands through Greywall.
 
 ```bash
 # Full benchmark suite
@@ -51,7 +51,7 @@ This is the most realistic benchmark for understanding the cost of running agent
 
 | Option | Description |
 |--------|-------------|
-| `-b, --binary PATH` | Path to fence binary (default: ./fence) |
+| `-b, --binary PATH` | Path to greywall binary (default: ./greywall) |
 | `-o, --output DIR` | Output directory (default: ./benchmarks) |
 | `-n, --runs N` | Minimum runs per benchmark (default: 30) |
 | `-q, --quick` | Quick mode: fewer runs, skip slow benchmarks |
@@ -92,13 +92,13 @@ benchstat bench.txt
 
 ```bash
 # Quick syscall cost breakdown
-strace -f -c ./fence -- true
+strace -f -c ./greywall -- true
 
 # Context switches, page faults
-perf stat -- ./fence -- true
+perf stat -- ./greywall -- true
 
 # Full profiling (flamegraph-ready)
-perf record -F 99 -g -- ./fence -- git status
+perf record -F 99 -g -- ./greywall -- git status
 perf report
 ```
 
@@ -106,10 +106,10 @@ perf report
 
 ```bash
 # Time Profiler via Instruments
-xcrun xctrace record --template 'Time Profiler' --launch -- ./fence -- true
+xcrun xctrace record --template 'Time Profiler' --launch -- ./greywall -- true
 
 # Quick call-stack snapshot
-./fence -- sleep 5 &
+./greywall -- sleep 5 &
 sample $! 5 -file sample.txt
 ```
 
@@ -150,7 +150,7 @@ The overhead factor decreases as the actual workload increases (because sandbox 
 
 1. Run benchmarks on each platform independently
 2. Compare overhead factors, not absolute times
-3. Use the same fence version and workloads
+3. Use the same greywall version and workloads
 
 ```bash
 # On macOS
@@ -256,7 +256,7 @@ Linux initialization is ~3,700x slower because it must:
 
 macOS only generates a Seatbelt profile string (very cheap).
 
-### Cold Start Overhead (one `fence` invocation per command)
+### Cold Start Overhead (one `greywall` invocation per command)
 
 | Workload | Linux | macOS |
 |----------|-------|-------|
@@ -264,7 +264,7 @@ macOS only generates a Seatbelt profile string (very cheap).
 | Python | 124 ms | 33 ms |
 | Git status | 114 ms | 25 ms |
 
-This is the realistic cost for scripts running `fence -c "command"` repeatedly.
+This is the realistic cost for scripts running `greywall -c "command"` repeatedly.
 
 ### Warm Path Overhead (pre-initialized manager)
 
@@ -289,9 +289,9 @@ Overhead decreases as the actual workload increases (sandbox setup is fixed cost
 
 ## Impact on Agent Usage
 
-### Long-Running Agents (`fence claude`, `fence codex`)
+### Long-Running Agents (`greywall claude`, `greywall codex`)
 
-For agents that run as a child process under fence:
+For agents that run as a child process under greywall:
 
 | Phase | Cost |
 |-------|------|
@@ -306,11 +306,11 @@ Child processes inherit the sandbox - no re-initialization, no WrapCommand overh
 | `git status` | 2.1 ms | 5.9 ms |
 | Python script | 11 ms | 15 ms |
 
-**Bottom line**: For `fence <agent>` usage, sandbox overhead is a one-time startup cost. Tool calls inside the agent run at native speed.
+**Bottom line**: For `greywall <agent>` usage, sandbox overhead is a one-time startup cost. Tool calls inside the agent run at native speed.
 
-### Per-Command Invocation (`fence -c "command"`)
+### Per-Command Invocation (`greywall -c "command"`)
 
-For scripts or CI running fence per command:
+For scripts or CI running greywall per command:
 
 | Session | Linux Cost | macOS Cost |
 |---------|------------|------------|

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve `fence`!
+Thanks for helping improve `greywall`!
 
 If you have any questions, feel free to open an issue.
 
@@ -12,11 +12,11 @@ If you have any questions, feel free to open an issue.
 - Clone and prepare:
 
   ```bash
-  git clone https://github.com/Use-Tusk/fence
-  cd fence
+  git clone https://gitea.app.monadical.io/monadical/greywall
+  cd greywall
   make setup   # Install deps and lint tools
   make build   # Build the binary
-  ./fence --help
+  ./greywall --help
   ```
 
 ## Dev workflow
@@ -25,7 +25,7 @@ Common targets:
 
 | Command | Description |
 |---------|-------------|
-| `make build` | Build the binary (`./fence`) |
+| `make build` | Build the binary (`./greywall`) |
 | `make run` | Build and run |
 | `make test` | Run tests |
 | `make test-ci` | Run tests with coverage |
@@ -63,14 +63,14 @@ make test-ci
 
 ```bash
 # Test blocked network request
-./fence curl https://example.com
+./greywall curl https://example.com
 
 # Test with allowed domain
 echo '{"network":{"allowedDomains":["example.com"]}}' > /tmp/test.json
-./fence -s /tmp/test.json curl https://example.com
+./greywall -s /tmp/test.json curl https://example.com
 
 # Test monitor mode
-./fence -m -c "touch /etc/test"
+./greywall -m -c "touch /etc/test"
 ```
 
 ### Testing on Linux
@@ -82,7 +82,7 @@ Requires `bubblewrap` and `socat`:
 sudo apt install bubblewrap socat
 
 # Test in Colima or VM
-./fence curl https://example.com
+./greywall curl https://example.com
 ```
 
 ## Troubleshooting

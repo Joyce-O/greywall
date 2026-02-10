@@ -18,7 +18,7 @@ Goal: make CI steps safer by default: minimal egress and controlled writes.
 Run:
 
 ```bash
-fence --settings ./fence.json -c "make test"
+greywall --settings ./greywall.json -c "make test"
 ```
 
 ## Add only what you need
@@ -26,7 +26,7 @@ fence --settings ./fence.json -c "make test"
 Use monitor mode to discover what a job tries to reach:
 
 ```bash
-fence -m --settings ./fence.json -c "make test"
+greywall -m --settings ./greywall.json -c "make test"
 ```
 
 Then allowlist only:

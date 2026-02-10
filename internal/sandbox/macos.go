@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // sessionSuffix is a unique identifier for this process session.
@@ -609,10 +609,10 @@ func WrapCommandMacOS(cfg *config.Config, command string, exposedPorts []int, de
 	}
 
 	if debug && len(exposedPorts) > 0 {
-		fmt.Fprintf(os.Stderr, "[fence:macos] Enabling local binding for exposed ports: %v\n", exposedPorts)
+		fmt.Fprintf(os.Stderr, "[greywall:macos] Enabling local binding for exposed ports: %v\n", exposedPorts)
 	}
 	if debug && allowLocalBinding && !allowLocalOutbound {
-		fmt.Fprintf(os.Stderr, "[fence:macos] Blocking localhost outbound (AllowLocalOutbound=false)\n")
+		fmt.Fprintf(os.Stderr, "[greywall:macos] Blocking localhost outbound (AllowLocalOutbound=false)\n")
 	}
 
 	profile := GenerateSandboxProfile(params)

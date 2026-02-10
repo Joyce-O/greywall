@@ -51,8 +51,8 @@ func NormalizePath(pathPattern string) string {
 // Used on macOS where transparent proxying is not available.
 func GenerateProxyEnvVars(proxyURL string) []string {
 	envVars := []string{
-		"FENCE_SANDBOX=1",
-		"TMPDIR=/tmp/fence",
+		"GREYWALL_SANDBOX=1",
+		"TMPDIR=/tmp/greywall",
 	}
 
 	if proxyURL == "" {

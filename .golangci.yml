@@ -7,11 +7,11 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/Use-Tusk/fence)
+      - prefix(gitea.app.monadical.io/monadical/greywall)
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/Use-Tusk/fence
+    local-prefixes: gitea.app.monadical.io/monadical/greywall
   gocritic:
     disabled-checks:
       - singleCaseSwitch

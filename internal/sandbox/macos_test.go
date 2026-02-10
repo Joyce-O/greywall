@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // TestMacOS_NetworkRestrictionWithProxy verifies that when a proxy URL is set,
@@ -274,14 +274,14 @@ func TestExpandMacOSTmpPaths(t *testing.T) {
 			want:  []string{".", "~/.cache"},
 		},
 		{
-			name:  "mirrors /tmp/fence to /private/tmp/fence",
-			input: []string{".", "/tmp/fence"},
-			want:  []string{".", "/tmp/fence", "/private/tmp/fence"},
+			name:  "mirrors /tmp/greywall to /private/tmp/greywall",
+			input: []string{".", "/tmp/greywall"},
+			want:  []string{".", "/tmp/greywall", "/private/tmp/greywall"},
 		},
 		{
-			name:  "mirrors /private/tmp/fence to /tmp/fence",
-			input: []string{".", "/private/tmp/fence"},
-			want:  []string{".", "/private/tmp/fence", "/tmp/fence"},
+			name:  "mirrors /private/tmp/greywall to /tmp/greywall",
+			input: []string{".", "/private/tmp/greywall"},
+			want:  []string{".", "/private/tmp/greywall", "/tmp/greywall"},
 		},
 		{
 			name:  "mirrors nested subdirectory",
@@ -290,8 +290,8 @@ func TestExpandMacOSTmpPaths(t *testing.T) {
 		},
 		{
 			name:  "no duplicate when mirror already present",
-			input: []string{".", "/tmp/fence", "/private/tmp/fence"},
-			want:  []string{".", "/tmp/fence", "/private/tmp/fence"},
+			input: []string{".", "/tmp/greywall", "/private/tmp/greywall"},
+			want:  []string{".", "/tmp/greywall", "/private/tmp/greywall"},
 		},
 	}
 

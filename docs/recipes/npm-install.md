@@ -18,7 +18,7 @@ Goal: allow npm to fetch packages, but block unexpected egress.
 Run:
 
 ```bash
-fence --settings ./fence.json npm install
+greywall --settings ./greywall.json npm install
 ```
 
 ## Iterate with monitor mode
@@ -26,7 +26,7 @@ fence --settings ./fence.json npm install
 If installs fail, run:
 
 ```bash
-fence -m --settings ./fence.json npm install
+greywall -m --settings ./greywall.json npm install
 ```
 
 Then add the minimum extra domains required for your workflow (private registries, GitHub tarballs, etc.).

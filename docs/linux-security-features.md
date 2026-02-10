@@ -1,6 +1,6 @@
 # Linux Security Features
 
-Fence uses multiple layers of security on Linux, with graceful fallback when features are unavailable.
+Greywall uses multiple layers of security on Linux, with graceful fallback when features are unavailable.
 
 ## Security Layers
 
@@ -13,13 +13,13 @@ Fence uses multiple layers of security on Linux, with graceful fallback when fea
 
 ## Feature Detection
 
-Fence automatically detects available features and uses the best available combination.
+Greywall automatically detects available features and uses the best available combination.
 
 To see what features are detected:
 
 ```bash
 # Check what features are available on your system
-fence --linux-features
+greywall --linux-features
 
 # Example output:
 # Linux Sandbox Features:
@@ -41,7 +41,7 @@ fence --linux-features
 
 Landlock is applied via an **embedded wrapper** approach:
 
-1. bwrap spawns `fence --landlock-apply -- <user-command>`
+1. bwrap spawns `greywall --landlock-apply -- <user-command>`
 2. The wrapper applies Landlock kernel restrictions
 3. The wrapper `exec()`s the user command
 
@@ -75,25 +75,25 @@ This provides **defense-in-depth**: both bwrap mounts AND Landlock kernel restri
 - **Impact**: `--unshare-net` is skipped; network is not fully isolated
 - **Cause**: Running in Docker, GitHub Actions, or other environments without `CAP_NET_ADMIN`
 - **Fallback**: Proxy-based filtering still works; filesystem/PID/seccomp isolation still active
-- **Check**: Run `fence --linux-features` and look for "Network namespace (--unshare-net): false"
+- **Check**: Run `greywall --linux-features` and look for "Network namespace (--unshare-net): false"
 - **Workaround**: Run with `sudo`, or in Docker use `--cap-add=NET_ADMIN`
 
 > [!NOTE]
-> This is the most common "reduced isolation" scenario. Fence automatically detects this at startup and adapts. See the troubleshooting guide for more details.
+> This is the most common "reduced isolation" scenario. Greywall automatically detects this at startup and adapts. See the troubleshooting guide for more details.
 
 ### When bwrap is not available
 
-- **Impact**: Cannot run fence on Linux
+- **Impact**: Cannot run greywall on Linux
 - **Solution**: Install bubblewrap: `apt install bubblewrap` or `dnf install bubblewrap`
 
 ### When socat is not available
 
-- **Impact**: Cannot run fence on Linux
+- **Impact**: Cannot run greywall on Linux
 - **Solution**: Install socat: `apt install socat` or `dnf install socat`
 
 ## Blocked Syscalls (seccomp)
 
-Fence blocks dangerous syscalls that could be used for sandbox escape or privilege escalation:
+Greywall blocks dangerous syscalls that could be used for sandbox escape or privilege escalation:
 
 | Syscall | Reason |
 |---------|--------|
@@ -111,13 +111,13 @@ Fence blocks dangerous syscalls that could be used for sandbox escape or privile
 
 ## Violation Monitoring
 
-On Linux, violation monitoring (`fence -m`) shows:
+On Linux, violation monitoring (`greywall -m`) shows:
 
 | Source | What it shows | Requirements |
 |--------|---------------|--------------|
-| `[fence:http]` | Blocked HTTP/HTTPS requests | None |
-| `[fence:socks]` | Blocked SOCKS connections | None |
-| `[fence:ebpf]` | Blocked filesystem access + syscalls | CAP_BPF or root |
+| `[greywall:http]` | Blocked HTTP/HTTPS requests | None |
+| `[greywall:socks]` | Blocked SOCKS connections | None |
+| `[greywall:ebpf]` | Blocked filesystem access + syscalls | CAP_BPF or root |
 
 **Notes**:
 
@@ -127,7 +127,7 @@ On Linux, violation monitoring (`fence -m`) shows:
 
 ## Comparison with macOS
 
-| Feature | macOS (Seatbelt) | Linux (fence) |
+| Feature | macOS (Seatbelt) | Linux (greywall) |
 |---------|------------------|---------------|
 | Filesystem control | Native | bwrap + Landlock |
 | Glob patterns | Native regex | Expanded at startup |
@@ -181,12 +181,12 @@ sudo apk add bubblewrap socat
 For full violation visibility without root:
 
 ```bash
-# Grant CAP_BPF to the fence binary
-sudo setcap cap_bpf+ep /usr/local/bin/fence
+# Grant CAP_BPF to the greywall binary
+sudo setcap cap_bpf+ep /usr/local/bin/greywall
 ```
 
-Or run fence with sudo when monitoring is needed:
+Or run greywall with sudo when monitoring is needed:
 
 ```bash
-sudo fence -m <command>
+sudo greywall -m <command>
 ```

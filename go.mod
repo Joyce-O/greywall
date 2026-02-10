@@ -1,4 +1,4 @@
-module github.com/Use-Tusk/fence
+module gitea.app.monadical.io/monadical/greywall
 
 go 1.25
 

@@ -1,6 +1,6 @@
 # Architecture
 
-Fence restricts network, filesystem, and command access for arbitrary commands. It works by:
+Greywall restricts network, filesystem, and command access for arbitrary commands. It works by:
 
 1. **Blocking commands** via configurable deny/allow lists before execution
 2. **Intercepting network traffic** via HTTP/SOCKS5 proxies that filter by domain
@@ -9,7 +9,7 @@ Fence restricts network, filesystem, and command access for arbitrary commands. 
 
 ```mermaid
 flowchart TB
-    subgraph Fence
+    subgraph Greywall
         Config["Config<br/>(JSON)"]
         Manager
         CmdCheck["Command<br/>Blocking"]
@@ -30,8 +30,8 @@ flowchart TB
 ## Project Structure
 
 ```text
-fence/
-├── cmd/fence/           # CLI entry point
+greywall/
+├── cmd/greywall/           # CLI entry point
 │   └── main.go          # Includes --landlock-apply wrapper mode
 ├── internal/            # Private implementation
 │   ├── config/          # Configuration loading/validation
@@ -52,8 +52,8 @@ fence/
 │       ├── dangerous.go # Protected file/directory lists
 │       ├── shell.go     # Shell quoting utilities
 │       └── utils.go     # Path normalization
-└── pkg/fence/           # Public Go API
-    └── fence.go
+└── pkg/greywall/           # Public Go API
+    └── greywall.go
 ```
 
 ## Core Components
@@ -71,7 +71,7 @@ type Config struct {
 }
 ```
 
-- Loads from XDG config dir (`~/.config/fence/fence.json` or `~/Library/Application Support/fence/fence.json`) or custom path
+- Loads from XDG config dir (`~/.config/greywall/greywall.json` or `~/Library/Application Support/greywall/greywall.json`) or custom path
 - Falls back to restrictive defaults (block all network, default command deny list)
 - Validates paths and normalizes them
 
@@ -181,7 +181,7 @@ flowchart TB
         SOCKS["SOCKS Proxy<br/>:random"]
         HSOCAT["socat<br/>(HTTP bridge)"]
         SSOCAT["socat<br/>(SOCKS bridge)"]
-        USOCK["Unix Sockets<br/>/tmp/fence-*.sock"]
+        USOCK["Unix Sockets<br/>/tmp/greywall-*.sock"]
     end
 
     subgraph Sandbox ["Sandbox (bwrap --unshare-net)"]
@@ -221,7 +221,7 @@ flowchart TB
 
     subgraph Host
         HSOCAT["socat<br/>TCP-LISTEN:8888"]
-        USOCK["Unix Socket<br/>/tmp/fence-rev-8888-*.sock"]
+        USOCK["Unix Socket<br/>/tmp/greywall-rev-8888-*.sock"]
     end
 
     subgraph Sandbox
@@ -286,7 +286,7 @@ flowchart TD
 
 ### Linux Security Layers
 
-On Linux, fence uses multiple security layers with graceful fallback:
+On Linux, greywall uses multiple security layers with graceful fallback:
 
 1. bubblewrap (core isolation via Linux namespaces)
 2. seccomp (syscall filtering)
@@ -306,15 +306,15 @@ The `-m` (monitor) flag enables real-time visibility into blocked operations. Th
 
 | Prefix | Source | Description |
 |--------|--------|-------------|
-| `[fence:http]` | Both | HTTP/HTTPS proxy (blocked requests only in monitor mode) |
-| `[fence:socks]` | Both | SOCKS5 proxy (blocked requests only in monitor mode) |
-| `[fence:logstream]` | macOS only | Kernel-level sandbox violations from `log stream` |
-| `[fence:ebpf]` | Linux only | Filesystem/syscall failures (requires CAP_BPF or root) |
-| `[fence:filter]` | Both | Domain filter rule matches (debug mode only) |
+| `[greywall:http]` | Both | HTTP/HTTPS proxy (blocked requests only in monitor mode) |
+| `[greywall:socks]` | Both | SOCKS5 proxy (blocked requests only in monitor mode) |
+| `[greywall:logstream]` | macOS only | Kernel-level sandbox violations from `log stream` |
+| `[greywall:ebpf]` | Linux only | Filesystem/syscall failures (requires CAP_BPF or root) |
+| `[greywall:filter]` | Both | Domain filter rule matches (debug mode only) |
 
 ### macOS Log Stream
 
-On macOS, fence spawns `log stream` with a predicate to capture sandbox violations:
+On macOS, greywall spawns `log stream` with a predicate to capture sandbox violations:
 
 ```bash
 log stream --predicate 'eventMessage ENDSWITH "_SBX"' --style compact
@@ -344,4 +344,4 @@ Filtered out (too noisy):
 
 ## Security Model
 
-See [`docs/security-model.md`](docs/security-model.md) for Fence's threat model, guarantees, and limitations.
+See [`docs/security-model.md`](docs/security-model.md) for Greywall's threat model, guarantees, and limitations.

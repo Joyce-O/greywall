@@ -1,4 +1,4 @@
-// Package config defines the configuration types and loading for fence.
+// Package config defines the configuration types and loading for greywall.
 package config
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/tidwall/jsonc"
 )
 
-// Config is the main configuration for fence.
+// Config is the main configuration for greywall.
 type Config struct {
 	Extends    string           `json:"extends,omitempty"`
 	Network    NetworkConfig    `json:"network"`
@@ -130,12 +130,12 @@ func Default() *Config {
 
 // DefaultConfigPath returns the default config file path.
 // Uses the OS-preferred config directory (XDG on Linux, ~/Library/Application Support on macOS).
-// Falls back to ~/.fence.json if the new location doesn't exist but the legacy one does.
+// Falls back to ~/.greywall.json if the new location doesn't exist but the legacy one does.
 func DefaultConfigPath() string {
 	// Try OS-preferred config directory first
 	configDir, err := os.UserConfigDir()
 	if err == nil {
-		newPath := filepath.Join(configDir, "fence", "fence.json")
+		newPath := filepath.Join(configDir, "greywall", "greywall.json")
 		if _, err := os.Stat(newPath); err == nil {
 			return newPath
 		}
@@ -149,18 +149,18 @@ func DefaultConfigPath() string {
 	// Fall back to legacy path if it exists
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "fence.json"
+		return "greywall.json"
 	}
-	legacyPath := filepath.Join(home, ".fence.json")
+	legacyPath := filepath.Join(home, ".greywall.json")
 	if _, err := os.Stat(legacyPath); err == nil {
 		return legacyPath
 	}
 
 	// Neither exists, prefer new XDG-compliant path
 	if configDir != "" {
-		return filepath.Join(configDir, "fence", "fence.json")
+		return filepath.Join(configDir, "greywall", "greywall.json")
 	}
-	return filepath.Join(home, ".config", "fence", "fence.json")
+	return filepath.Join(home, ".config", "greywall", "greywall.json")
 }
 
 // Load loads configuration from a file path.

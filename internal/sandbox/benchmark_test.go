@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // ============================================================================
@@ -305,8 +305,8 @@ func BenchmarkOverhead(b *testing.B) {
 
 func skipBenchIfSandboxed(b *testing.B) {
 	b.Helper()
-	if os.Getenv("FENCE_SANDBOX") == "1" {
-		b.Skip("already running inside Fence sandbox")
+	if os.Getenv("GREYWALL_SANDBOX") == "1" {
+		b.Skip("already running inside Greywall sandbox")
 	}
 }
 

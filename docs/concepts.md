@@ -1,15 +1,15 @@
 # Concepts
 
-Fence combines two ideas:
+Greywall combines two ideas:
 
 1. **An OS sandbox** to enforce "no direct network" and restrict filesystem operations.
 2. **Local filtering proxies** (HTTP + SOCKS5) to selectively allow outbound traffic by domain.
 
 ## Network model
 
-By default, fence blocks all outbound network access.
+By default, greywall blocks all outbound network access.
 
-When you allow domains, fence:
+When you allow domains, greywall:
 
 - Starts local HTTP and SOCKS5 proxies
 - Sets proxy environment variables (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`)
@@ -29,13 +29,13 @@ These are separate on purpose. A typical safe default for dev servers is:
 
 ## Filesystem model
 
-Fence is designed around "read mostly, write narrowly":
+Greywall is designed around "read mostly, write narrowly":
 
 - **Reads**: allowed by default (you can block specific paths via `denyRead`).
 - **Writes**: denied by default (you must opt-in with `allowWrite`).
 - **denyWrite**: overrides `allowWrite` (useful for protecting secrets and dangerous files).
 
-Fence also protects some dangerous targets regardless of config (e.g. shell startup files and git hooks). See `ARCHITECTURE.md` for the full list.
+Greywall also protects some dangerous targets regardless of config (e.g. shell startup files and git hooks). See `ARCHITECTURE.md` for the full list.
 
 ## Debug vs Monitor mode
 

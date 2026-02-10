@@ -1,10 +1,10 @@
-// Package fence provides a public API for sandboxing commands.
-package fence
+// Package greywall provides a public API for sandboxing commands.
+package greywall
 
 import (
-	"github.com/Use-Tusk/fence/internal/config"
-	"github.com/Use-Tusk/fence/internal/platform"
-	"github.com/Use-Tusk/fence/internal/sandbox"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/platform"
+	"gitea.app.monadical.io/monadical/greywall/internal/sandbox"
 )
 
 // IsSupported returns true if the current platform supports sandboxing (macOS/Linux).
@@ -12,7 +12,7 @@ func IsSupported() bool {
 	return platform.IsSupported()
 }
 
-// Config is the configuration for fence.
+// Config is the configuration for greywall.
 type Config = config.Config
 
 // NetworkConfig defines network restrictions.

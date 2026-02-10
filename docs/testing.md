@@ -67,9 +67,9 @@ go test -v -count=1 ./internal/sandbox/...
 
 #### Sandboxed Build Environments (Nix, etc.)
 
-If you're packaging fence for a distribution (e.g., Nix, Homebrew, Debian), note that some integration tests will be skipped when running `go test` during the build.
+If you're packaging greywall for a distribution (e.g., Nix, Homebrew, Debian), note that some integration tests will be skipped when running `go test` during the build.
 
-Fence's Landlock integration on Linux uses a wrapper approach: the `fence` binary re-executes itself with `--landlock-apply` inside the sandbox. Test binaries (e.g., `sandbox.test`) don't have this handler, so Landlock-specific tests automatically skip when not running as the `fence` CLI.
+Greywall's Landlock integration on Linux uses a wrapper approach: the `greywall` binary re-executes itself with `--landlock-apply` inside the sandbox. Test binaries (e.g., `sandbox.test`) don't have this handler, so Landlock-specific tests automatically skip when not running as the `greywall` CLI.
 
 Tests that skip include those calling `skipIfLandlockNotUsable()`:
 
@@ -77,25 +77,25 @@ Tests that skip include those calling `skipIfLandlockNotUsable()`:
 - `TestLinux_LandlockProtectsGitHooks`
 - `TestLinux_LandlockProtectsGitConfig`
 - `TestLinux_LandlockProtectsBashrc`
-- `TestLinux_LandlockAllowsTmpFence`
+- `TestLinux_LandlockAllowsTmpGreywall`
 - `TestLinux_PathTraversalBlocked`
 - `TestLinux_SeccompBlocksDangerousSyscalls`
 
 | Test Type | What it tests | Landlock coverage |
 |-----------|---------------|-------------------|
 | `go test` (integration) | Go APIs, bwrap isolation, command blocking | Skipped (test binary can't use `--landlock-apply`) |
-| `smoke_test.sh` | Actual `fence` CLI end-to-end | ✅ Full coverage |
+| `smoke_test.sh` | Actual `greywall` CLI end-to-end | ✅ Full coverage |
 
 For full test coverage including Landlock, run the smoke tests against the built binary (see "Smoke Tests" section below).
 
 **Nested sandboxing limitations:**
 
-- **macOS**: Nested Seatbelt sandboxing is not supported. If the build environment already uses `sandbox-exec` (like Nix's Darwin sandbox), fence's tests cannot create another sandbox. The kernel returns `forbidden-sandbox-reinit`. This is a macOS limitation.
+- **macOS**: Nested Seatbelt sandboxing is not supported. If the build environment already uses `sandbox-exec` (like Nix's Darwin sandbox), greywall's tests cannot create another sandbox. The kernel returns `forbidden-sandbox-reinit`. This is a macOS limitation.
 - **Linux**: Tests should work in most build sandboxes, but Landlock tests will skip as explained above. Runtime functionality is unaffected.
 
 ### Smoke Tests
 
-Smoke tests verify the compiled `fence` binary works end-to-end. Unlike integration tests (which test internal Go APIs), smoke tests exercise the CLI interface.
+Smoke tests verify the compiled `greywall` binary works end-to-end. Unlike integration tests (which test internal Go APIs), smoke tests exercise the CLI interface.
 
 **File:** [`scripts/smoke_test.sh`](/scripts/smoke_test.sh)
 
@@ -105,7 +105,7 @@ Smoke tests verify the compiled `fence` binary works end-to-end. Unlike integrat
 - Filesystem restrictions via settings file
 - Command blocking via settings file
 - Network blocking
-- Environment variable injection (FENCE_SANDBOX, HTTP_PROXY)
+- Environment variable injection (GREYWALL_SANDBOX, HTTP_PROXY)
 - Tool compatibility (python3, node, git, rg) - ensure that frequently used tools don't break in sandbox
 
 **Run:**
@@ -115,10 +115,10 @@ Smoke tests verify the compiled `fence` binary works end-to-end. Unlike integrat
 ./scripts/smoke_test.sh
 
 # Test specific binary
-./scripts/smoke_test.sh ./path/to/fence
+./scripts/smoke_test.sh ./path/to/greywall
 
 # Enable network tests (requires internet)
-FENCE_TEST_NETWORK=1 ./scripts/smoke_test.sh
+GREYWALL_TEST_NETWORK=1 ./scripts/smoke_test.sh
 ```
 
 ## Platform-Specific Behavior
@@ -158,7 +158,7 @@ The `integration_test.go` file provides helpers for writing sandbox tests:
 
 ```go
 // Skip helpers
-skipIfAlreadySandboxed(t)              // Skip if running inside Fence
+skipIfAlreadySandboxed(t)              // Skip if running inside Greywall
 skipIfCommandNotFound(t, "python3")    // Skip if command missing
 
 // Run a command under the sandbox
@@ -237,10 +237,10 @@ go test -v -run TestSpecificTest ./internal/sandbox/...
 
 ```bash
 # Replicate what the test does
-./fence -c "the-command-that-failed"
+./greywall -c "the-command-that-failed"
 
 # With a settings file
-./fence -s /path/to/settings.json -c "command"
+./greywall -s /path/to/settings.json -c "command"
 ```
 
 ### Check platform capabilities

@@ -1,14 +1,14 @@
 #!/bin/bash
-# smoke_test.sh - Run smoke tests against the fence binary
+# smoke_test.sh - Run smoke tests against the greywall binary
 #
-# This script tests the compiled fence binary to ensure basic functionality works.
+# This script tests the compiled greywall binary to ensure basic functionality works.
 # Unlike integration tests (which test internal APIs), smoke tests verify the
 # final artifact behaves correctly.
 #
 # Usage:
-#   ./scripts/smoke_test.sh [path-to-fence-binary]
+#   ./scripts/smoke_test.sh [path-to-greywall-binary]
 #
-# If no path is provided, it will look for ./fence or use 'go run'.
+# If no path is provided, it will look for ./greywall or use 'go run'.
 
 set -euo pipefail
 
@@ -21,25 +21,25 @@ PASSED=0
 FAILED=0
 SKIPPED=0
 
-FENCE_BIN="${1:-}"
-if [[ -z "$FENCE_BIN" ]]; then
-    if [[ -x "./fence" ]]; then
-        FENCE_BIN="./fence"
-    elif [[ -x "./dist/fence" ]]; then
-        FENCE_BIN="./dist/fence"
+GREYWALL_BIN="${1:-}"
+if [[ -z "$GREYWALL_BIN" ]]; then
+    if [[ -x "./greywall" ]]; then
+        GREYWALL_BIN="./greywall"
+    elif [[ -x "./dis./greywall" ]]; then
+        GREYWALL_BIN="./dis./greywall"
     else
-        echo "Building fence..."
-        go build -o ./fence ./cmd/fence
-        FENCE_BIN="./fence"
+        echo "Building greywall..."
+        go build -o ./greywall ./cm./greywall
+        GREYWALL_BIN="./greywall"
     fi
 fi
 
-if [[ ! -x "$FENCE_BIN" ]]; then
-    echo "Error: fence binary not found at $FENCE_BIN"
+if [[ ! -x "$GREYWALL_BIN" ]]; then
+    echo "Error: greywall binary not found at $GREYWALL_BIN"
     exit 1
 fi
 
-echo "Using fence binary: $FENCE_BIN"
+echo "Using greywall binary: $GREYWALL_BIN"
 echo "=============================================="
 
 # Create temp workspace in current directory (not /tmp, which gets overlaid by bwrap --tmpfs)
@@ -100,16 +100,16 @@ echo "=== Basic Functionality ==="
 echo ""
 
 # Test: Version flag works
-run_test "version flag" "pass" "$FENCE_BIN" --version
+run_test "version flag" "pass" "$GREYWALL_BIN" --version
 
 # Test: Echo works
-run_test "echo command" "pass" "$FENCE_BIN" -c "echo hello"
+run_test "echo command" "pass" "$GREYWALL_BIN" -c "echo hello"
 
 # Test: ls works
-run_test "ls command" "pass" "$FENCE_BIN" -- ls
+run_test "ls command" "pass" "$GREYWALL_BIN" -- ls
 
 # Test: pwd works
-run_test "pwd command" "pass" "$FENCE_BIN" -- pwd
+run_test "pwd command" "pass" "$GREYWALL_BIN" -- pwd
 
 echo ""
 echo "=== Filesystem Restrictions ==="
@@ -117,11 +117,11 @@ echo ""
 
 # Test: Read existing file works
 echo "test content" > "$WORKSPACE/test.txt"
-run_test "read file in workspace" "pass" "$FENCE_BIN" -c "cat $WORKSPACE/test.txt"
+run_test "read file in workspace" "pass" "$GREYWALL_BIN" -c "cat $WORKSPACE/test.txt"
 
 # Test: Write outside workspace blocked
 # Create a settings file that only allows write to current workspace
-SETTINGS_FILE="$WORKSPACE/fence.json"
+SETTINGS_FILE="$WORKSPAC./greywall.json"
 cat > "$SETTINGS_FILE" << EOF
 {
   "filesystem": {
@@ -131,14 +131,14 @@ cat > "$SETTINGS_FILE" << EOF
 EOF
 
 # Note: Use /var/tmp since /tmp is mounted as tmpfs (writable but ephemeral) inside the sandbox
-OUTSIDE_FILE="/var/tmp/outside-fence-test-$$.txt"
-run_test "write outside workspace blocked" "fail" "$FENCE_BIN" -s "$SETTINGS_FILE" -c "touch $OUTSIDE_FILE"
+OUTSIDE_FILE="/var/tmp/outside-greywall-test-$$.txt"
+run_test "write outside workspace blocked" "fail" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "touch $OUTSIDE_FILE"
 
 # Cleanup in case it wasn't blocked
 rm -f "$OUTSIDE_FILE" 2>/dev/null || true
 
 # Test: Write inside workspace allowed (using the workspace path in -c)
-run_test "write inside workspace allowed" "pass" "$FENCE_BIN" -s "$SETTINGS_FILE" -c "touch $WORKSPACE/new-file.txt"
+run_test "write inside workspace allowed" "pass" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "touch $WORKSPACE/new-file.txt"
 
 # Check file was actually created
 if [[ -f "$WORKSPACE/new-file.txt" ]]; then
@@ -166,16 +166,16 @@ cat > "$SETTINGS_FILE" << EOF
 EOF
 
 # Test: Denied command is blocked
-run_test "blocked command (rm -rf)" "fail" "$FENCE_BIN" -s "$SETTINGS_FILE" -c "rm -rf /tmp/test"
+run_test "blocked command (rm -rf)" "fail" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "rm -rf /tmp/test"
 
 # Test: Similar but not blocked command works (rm without -rf)
-run_test "allowed command (echo)" "pass" "$FENCE_BIN" -s "$SETTINGS_FILE" -c "echo safe command"
+run_test "allowed command (echo)" "pass" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "echo safe command"
 
 # Test: Chained command with blocked command
-run_test "chained blocked command" "fail" "$FENCE_BIN" -s "$SETTINGS_FILE" -c "ls && rm -rf /tmp/test"
+run_test "chained blocked command" "fail" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "ls && rm -rf /tmp/test"
 
 # Test: Nested shell with blocked command
-run_test "nested shell blocked command" "fail" "$FENCE_BIN" -s "$SETTINGS_FILE" -c 'bash -c "rm -rf /tmp/test"'
+run_test "nested shell blocked command" "fail" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c 'bash -c "rm -rf /tmp/test"'
 
 echo ""
 echo "=== Network Restrictions ==="
@@ -196,7 +196,7 @@ EOF
 if command_exists curl; then
     # Test: Network blocked by default - curl should fail or return blocked message
     # Use curl's own timeout (no need for external timeout command)
-    output=$("$FENCE_BIN" -s "$SETTINGS_FILE" -c "curl -s --connect-timeout 2 --max-time 3 http://example.com" 2>&1) || true
+    output=$("$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "curl -s --connect-timeout 2 --max-time 3 http://example.com" 2>&1) || true
     if echo "$output" | grep -qi "blocked\|refused\|denied\|timeout\|error"; then
         echo -e "Testing: network blocked (curl)... ${GREEN}PASS${NC}"
         PASSED=$((PASSED + 1))
@@ -218,8 +218,8 @@ else
     skip_test "network blocked (curl)" "curl not installed"
 fi
 
-# Test with allowed domain (only if FENCE_TEST_NETWORK is set)
-if [[ "${FENCE_TEST_NETWORK:-}" == "1" ]]; then
+# Test with allowed domain (only if GREYWALL_TEST_NETWORK is set)
+if [[ "${GREYWALL_TEST_NETWORK:-}" == "1" ]]; then
     cat > "$SETTINGS_FILE" << EOF
 {
   "network": {
@@ -231,12 +231,12 @@ if [[ "${FENCE_TEST_NETWORK:-}" == "1" ]]; then
 }
 EOF
     if command_exists curl; then
-        run_test "allowed domain works" "pass" "$FENCE_BIN" -s "$SETTINGS_FILE" -c "curl -s --connect-timeout 5 --max-time 10 https://httpbin.org/get"
+        run_test "allowed domain works" "pass" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c "curl -s --connect-timeout 5 --max-time 10 https://httpbin.org/get"
     else
         skip_test "allowed domain works" "curl not installed"
     fi
 else
-    skip_test "allowed domain works" "FENCE_TEST_NETWORK not set"
+    skip_test "allowed domain works" "GREYWALL_TEST_NETWORK not set"
 fi
 
 echo ""
@@ -244,25 +244,25 @@ echo "=== Tool Compatibility ==="
 echo ""
 
 if command_exists python3; then
-    run_test "python3 works" "pass" "$FENCE_BIN" -c "python3 -c 'print(1+1)'"
+    run_test "python3 works" "pass" "$GREYWALL_BIN" -c "python3 -c 'print(1+1)'"
 else
     skip_test "python3 works" "python3 not installed"
 fi
 
 if command_exists node; then
-    run_test "node works" "pass" "$FENCE_BIN" -c "node -e 'console.log(1+1)'"
+    run_test "node works" "pass" "$GREYWALL_BIN" -c "node -e 'console.log(1+1)'"
 else
     skip_test "node works" "node not installed"
 fi
 
 if command_exists git; then
-    run_test "git version works" "pass" "$FENCE_BIN" -- git --version
+    run_test "git version works" "pass" "$GREYWALL_BIN" -- git --version
 else
     skip_test "git version works" "git not installed"
 fi
 
 if command_exists rg; then
-    run_test "ripgrep works" "pass" "$FENCE_BIN" -- rg --version
+    run_test "ripgrep works" "pass" "$GREYWALL_BIN" -- rg --version
 else
     skip_test "ripgrep works" "rg not installed"
 fi
@@ -271,8 +271,8 @@ echo ""
 echo "=== Environment ==="
 echo ""
 
-# Test: FENCE_SANDBOX env var is set
-run_test "FENCE_SANDBOX set" "pass" "$FENCE_BIN" -c 'test "$FENCE_SANDBOX" = "1"'
+# Test: GREYWALL_SANDBOX env var is set
+run_test "GREYWALL_SANDBOX set" "pass" "$GREYWALL_BIN" -c 'test "$GREYWALL_SANDBOX" = "1"'
 
 # Test: Proxy env vars are set when network is configured
 cat > "$SETTINGS_FILE" << EOF
@@ -286,7 +286,7 @@ cat > "$SETTINGS_FILE" << EOF
 }
 EOF
 
-run_test "HTTP_PROXY set" "pass" "$FENCE_BIN" -s "$SETTINGS_FILE" -c 'test -n "$HTTP_PROXY"'
+run_test "HTTP_PROXY set" "pass" "$GREYWALL_BIN" -s "$SETTINGS_FILE" -c 'test -n "$HTTP_PROXY"'
 
 echo ""
 echo "=============================================="

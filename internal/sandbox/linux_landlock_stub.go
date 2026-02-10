@@ -2,7 +2,7 @@
 
 package sandbox
 
-import "github.com/Use-Tusk/fence/internal/config"
+import "gitea.app.monadical.io/monadical/greywall/internal/config"
 
 // ApplyLandlockFromConfig is a no-op on non-Linux platforms.
 func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []string, debug bool) error {

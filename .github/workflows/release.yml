@@ -75,7 +75,7 @@ jobs:
           {
             "version": "${{ github.ref_name }}",
             "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "url": "https://github.com/Use-Tusk/fence/releases/tag/${{ github.ref_name }}"
+            "url": "https://gitea.app.monadical.io/monadical/greywall/releases/tag/${{ github.ref_name }}"
           }
           EOF
 

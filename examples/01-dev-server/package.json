@@ -1,7 +1,7 @@
 {
   "name": "dev-server-demo",
   "version": "1.0.0",
-  "description": "Demo: Dev server with Redis in fence sandbox",
+  "description": "Demo: Dev server with Redis in greywall sandbox",
   "type": "module",
   "main": "app.js",
   "scripts": {

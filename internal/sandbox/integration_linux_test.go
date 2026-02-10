@@ -17,8 +17,8 @@ import (
 
 // skipIfLandlockNotUsable skips tests that require the Landlock wrapper.
 // The Landlock wrapper re-executes the binary with --landlock-apply, which only
-// the fence CLI understands. Test binaries (e.g., sandbox.test) don't have this
-// handler, so Landlock tests must be skipped when not running as the fence CLI.
+// the greywall CLI understands. Test binaries (e.g., sandbox.test) don't have this
+// handler, so Landlock tests must be skipped when not running as the greywall CLI.
 // TODO: consider removing tests that call this function, for now can keep them
 // as documentation.
 func skipIfLandlockNotUsable(t *testing.T) {
@@ -28,8 +28,8 @@ func skipIfLandlockNotUsable(t *testing.T) {
 		t.Skip("skipping: Landlock not available on this kernel")
 	}
 	exePath, _ := os.Executable()
-	if !strings.Contains(filepath.Base(exePath), "fence") {
-		t.Skip("skipping: Landlock wrapper requires fence CLI (test binary cannot use --landlock-apply)")
+	if !strings.Contains(filepath.Base(exePath), "greywall") {
+		t.Skip("skipping: Landlock wrapper requires greywall CLI (test binary cannot use --landlock-apply)")
 	}
 }
 
@@ -51,7 +51,7 @@ func TestLinux_LandlockBlocksWriteOutsideWorkspace(t *testing.T) {
 	skipIfLandlockNotUsable(t)
 
 	workspace := createTempWorkspace(t)
-	outsideFile := "/tmp/fence-test-outside-" + filepath.Base(workspace) + ".txt"
+	outsideFile := "/tmp/greywall-test-outside-" + filepath.Base(workspace) + ".txt"
 	defer func() { _ = os.Remove(outsideFile) }()
 
 	cfg := testConfigWithWorkspace(workspace)
@@ -198,24 +198,24 @@ func TestLinux_LandlockBlocksWriteSystemFiles(t *testing.T) {
 	cfg := testConfigWithWorkspace(workspace)
 
 	// Attempting to write to /etc should fail
-	result := runUnderSandbox(t, cfg, "touch /etc/fence-test-file", workspace)
+	result := runUnderSandbox(t, cfg, "touch /etc/greywall-test-file", workspace)
 
 	assertBlocked(t, result)
-	assertFileNotExists(t, "/etc/fence-test-file")
+	assertFileNotExists(t, "/etc/greywall-test-file")
 }
 
-// TestLinux_LandlockAllowsTmpFence verifies /tmp/fence is writable.
-func TestLinux_LandlockAllowsTmpFence(t *testing.T) {
+// TestLinux_LandlockAllowsTmpGreywall verifies /tmp/greywall is writable.
+func TestLinux_LandlockAllowsTmpGreywall(t *testing.T) {
 	skipIfAlreadySandboxed(t)
 	skipIfLandlockNotUsable(t)
 
 	workspace := createTempWorkspace(t)
 	cfg := testConfigWithWorkspace(workspace)
 
-	// Ensure /tmp/fence exists
-	_ = os.MkdirAll("/tmp/fence", 0o750)
+	// Ensure /tmp/greywall exists
+	_ = os.MkdirAll("/tmp/greywall", 0o750)
 
-	testFile := "/tmp/fence/test-file-" + filepath.Base(workspace)
+	testFile := "/tmp/greywall/test-file-" + filepath.Base(workspace)
 	defer func() { _ = os.Remove(testFile) }()
 
 	result := runUnderSandbox(t, cfg, "echo 'test' > "+testFile, workspace)
@@ -351,8 +351,8 @@ func TestLinux_TransparentProxyRoutesThroughSocks(t *testing.T) {
 	cfg.Filesystem.AllowWrite = []string{workspace}
 
 	// This test requires actual network and a running SOCKS5 proxy
-	if os.Getenv("FENCE_TEST_NETWORK") != "1" {
-		t.Skip("skipping: set FENCE_TEST_NETWORK=1 to run network tests (requires SOCKS5 proxy on localhost:1080)")
+	if os.Getenv("GREYWALL_TEST_NETWORK") != "1" {
+		t.Skip("skipping: set GREYWALL_TEST_NETWORK=1 to run network tests (requires SOCKS5 proxy on localhost:1080)")
 	}
 
 	result := runUnderSandboxWithTimeout(t, cfg, "curl -s --connect-timeout 5 --max-time 10 https://httpbin.org/get", workspace, 15*time.Second)
@@ -455,10 +455,10 @@ func TestLinux_SymlinkEscapeBlocked(t *testing.T) {
 	_ = os.Symlink("/etc", symlinkPath)
 
 	// Try to write through the symlink
-	result := runUnderSandbox(t, cfg, "echo 'test' > "+symlinkPath+"/fence-test", workspace)
+	result := runUnderSandbox(t, cfg, "echo 'test' > "+symlinkPath+"/greywall-test", workspace)
 
 	assertBlocked(t, result)
-	assertFileNotExists(t, "/etc/fence-test")
+	assertFileNotExists(t, "/etc/greywall-test")
 }
 
 // TestLinux_PathTraversalBlocked verifies path traversal attacks are prevented.
@@ -470,10 +470,10 @@ func TestLinux_PathTraversalBlocked(t *testing.T) {
 	cfg := testConfigWithWorkspace(workspace)
 
 	// Try to escape using ../../../
-	result := runUnderSandbox(t, cfg, "touch ../../../../tmp/fence-escape-test", workspace)
+	result := runUnderSandbox(t, cfg, "touch ../../../../tmp/greywall-escape-test", workspace)
 
 	assertBlocked(t, result)
-	assertFileNotExists(t, "/tmp/fence-escape-test")
+	assertFileNotExists(t, "/tmp/greywall-escape-test")
 }
 
 // TestLinux_DeviceAccessBlocked verifies device files cannot be accessed.

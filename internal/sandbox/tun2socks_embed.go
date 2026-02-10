@@ -32,7 +32,7 @@ func extractTun2Socks() (string, error) {
 		return "", fmt.Errorf("tun2socks: embedded binary not found for %s: %w", arch, err)
 	}
 
-	tmpFile, err := os.CreateTemp("", "fence-tun2socks-*")
+	tmpFile, err := os.CreateTemp("", "greywall-tun2socks-*")
 	if err != nil {
 		return "", fmt.Errorf("tun2socks: failed to create temp file: %w", err)
 	}

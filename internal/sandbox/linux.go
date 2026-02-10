@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // ProxyBridge bridges sandbox to an external SOCKS5 proxy via Unix socket.
@@ -53,7 +53,7 @@ func NewDnsBridge(dnsAddr string, debug bool) (*DnsBridge, error) {
 	socketID := hex.EncodeToString(id)
 
 	tmpDir := os.TempDir()
-	socketPath := filepath.Join(tmpDir, fmt.Sprintf("fence-dns-%s.sock", socketID))
+	socketPath := filepath.Join(tmpDir, fmt.Sprintf("greywall-dns-%s.sock", socketID))
 
 	bridge := &DnsBridge{
 		SocketPath: socketPath,
@@ -68,7 +68,7 @@ func NewDnsBridge(dnsAddr string, debug bool) (*DnsBridge, error) {
 	}
 	bridge.process = exec.Command("socat", socatArgs...) //nolint:gosec // args constructed from trusted input
 	if debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Starting DNS bridge: socat %s\n", strings.Join(socatArgs, " "))
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Starting DNS bridge: socat %s\n", strings.Join(socatArgs, " "))
 	}
 	if err := bridge.process.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start DNS bridge: %w", err)
@@ -78,7 +78,7 @@ func NewDnsBridge(dnsAddr string, debug bool) (*DnsBridge, error) {
 	for range 50 {
 		if fileExists(socketPath) {
 			if debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] DNS bridge ready (%s -> %s)\n", socketPath, dnsAddr)
+				fmt.Fprintf(os.Stderr, "[greywall:linux] DNS bridge ready (%s -> %s)\n", socketPath, dnsAddr)
 			}
 			return bridge, nil
 		}
@@ -98,7 +98,7 @@ func (b *DnsBridge) Cleanup() {
 	_ = os.Remove(b.SocketPath)
 
 	if b.debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] DNS bridge cleaned up\n")
+		fmt.Fprintf(os.Stderr, "[greywall:linux] DNS bridge cleaned up\n")
 	}
 }
 
@@ -143,7 +143,7 @@ func NewProxyBridge(proxyURL string, debug bool) (*ProxyBridge, error) {
 	socketID := hex.EncodeToString(id)
 
 	tmpDir := os.TempDir()
-	socketPath := filepath.Join(tmpDir, fmt.Sprintf("fence-proxy-%s.sock", socketID))
+	socketPath := filepath.Join(tmpDir, fmt.Sprintf("greywall-proxy-%s.sock", socketID))
 
 	bridge := &ProxyBridge{
 		SocketPath: socketPath,
@@ -166,7 +166,7 @@ func NewProxyBridge(proxyURL string, debug bool) (*ProxyBridge, error) {
 	}
 	bridge.process = exec.Command("socat", socatArgs...) //nolint:gosec // args constructed from trusted input
 	if debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Starting proxy bridge: socat %s\n", strings.Join(socatArgs, " "))
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Starting proxy bridge: socat %s\n", strings.Join(socatArgs, " "))
 	}
 	if err := bridge.process.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start proxy bridge: %w", err)
@@ -176,7 +176,7 @@ func NewProxyBridge(proxyURL string, debug bool) (*ProxyBridge, error) {
 	for range 50 {
 		if fileExists(socketPath) {
 			if debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] Proxy bridge ready (%s)\n", socketPath)
+				fmt.Fprintf(os.Stderr, "[greywall:linux] Proxy bridge ready (%s)\n", socketPath)
 			}
 			return bridge, nil
 		}
@@ -196,7 +196,7 @@ func (b *ProxyBridge) Cleanup() {
 	_ = os.Remove(b.SocketPath)
 
 	if b.debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Proxy bridge cleaned up\n")
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Proxy bridge cleaned up\n")
 	}
 }
 
@@ -239,7 +239,7 @@ func NewReverseBridge(ports []int, debug bool) (*ReverseBridge, error) {
 	}
 
 	for _, port := range ports {
-		socketPath := filepath.Join(tmpDir, fmt.Sprintf("fence-rev-%d-%s.sock", port, socketID))
+		socketPath := filepath.Join(tmpDir, fmt.Sprintf("greywall-rev-%d-%s.sock", port, socketID))
 		bridge.SocketPaths = append(bridge.SocketPaths, socketPath)
 
 		// Start reverse bridge: TCP listen on host port -> Unix socket
@@ -251,7 +251,7 @@ func NewReverseBridge(ports []int, debug bool) (*ReverseBridge, error) {
 		}
 		proc := exec.Command("socat", args...) //nolint:gosec // args constructed from trusted input
 		if debug {
-			fmt.Fprintf(os.Stderr, "[fence:linux] Starting reverse bridge for port %d: socat %s\n", port, strings.Join(args, " "))
+			fmt.Fprintf(os.Stderr, "[greywall:linux] Starting reverse bridge for port %d: socat %s\n", port, strings.Join(args, " "))
 		}
 		if err := proc.Start(); err != nil {
 			bridge.Cleanup()
@@ -261,7 +261,7 @@ func NewReverseBridge(ports []int, debug bool) (*ReverseBridge, error) {
 	}
 
 	if debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Reverse bridges ready for ports: %v\n", ports)
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Reverse bridges ready for ports: %v\n", ports)
 	}
 
 	return bridge, nil
@@ -282,7 +282,7 @@ func (b *ReverseBridge) Cleanup() {
 	}
 
 	if b.debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Reverse bridges cleaned up\n")
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Reverse bridges cleaned up\n")
 	}
 }
 
@@ -412,7 +412,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 	features := DetectLinuxFeatures()
 
 	if opts.Debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Available features: %s\n", features.Summary())
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Available features: %s\n", features.Summary())
 	}
 
 	// Build bwrap args with filesystem restrictions
@@ -427,7 +427,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 	if features.CanUnshareNet {
 		bwrapArgs = append(bwrapArgs, "--unshare-net") // Network namespace isolation
 	} else if opts.Debug {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Skipping --unshare-net (network namespace unavailable in this environment)\n")
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Skipping --unshare-net (network namespace unavailable in this environment)\n")
 	}
 
 	bwrapArgs = append(bwrapArgs, "--unshare-pid") // PID namespace isolation
@@ -439,12 +439,12 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 		filterPath, err := filter.GenerateBPFFilter()
 		if err != nil {
 			if opts.Debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] Seccomp filter generation failed: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[greywall:linux] Seccomp filter generation failed: %v\n", err)
 			}
 		} else {
 			seccompFilterPath = filterPath
 			if opts.Debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] Seccomp filter enabled (blocking %d dangerous syscalls)\n", len(DangerousSyscalls))
+				fmt.Fprintf(os.Stderr, "[greywall:linux] Seccomp filter enabled (blocking %d dangerous syscalls)\n", len(DangerousSyscalls))
 			}
 			// Add seccomp filter via fd 3 (will be set up via shell redirection)
 			bwrapArgs = append(bwrapArgs, "--seccomp", "3")
@@ -457,7 +457,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 		// In defaultDenyRead mode, we only bind essential system paths read-only
 		// and user-specified allowRead paths. Everything else is inaccessible.
 		if opts.Debug {
-			fmt.Fprintf(os.Stderr, "[fence:linux] DefaultDenyRead mode enabled - binding only essential system paths\n")
+			fmt.Fprintf(os.Stderr, "[greywall:linux] DefaultDenyRead mode enabled - binding only essential system paths\n")
 		}
 
 		// Bind essential system paths read-only
@@ -555,7 +555,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 				bwrapArgs = append(bwrapArgs, "--ro-bind", target, target)
 			}
 			if opts.Debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] Resolved /etc/resolv.conf symlink -> %s (cross-mount)\n", target)
+				fmt.Fprintf(os.Stderr, "[greywall:linux] Resolved /etc/resolv.conf symlink -> %s (cross-mount)\n", target)
 			}
 		}
 	}
@@ -683,7 +683,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 			bwrapArgs = append(bwrapArgs, "--cap-add", "CAP_NET_ADMIN")
 			bwrapArgs = append(bwrapArgs, "--cap-add", "CAP_NET_BIND_SERVICE")
 			// Bind the tun2socks binary into the sandbox (read-only)
-			bwrapArgs = append(bwrapArgs, "--ro-bind", tun2socksPath, "/tmp/fence-tun2socks")
+			bwrapArgs = append(bwrapArgs, "--ro-bind", tun2socksPath, "/tmp/greywall-tun2socks")
 		}
 
 		// Bind DNS bridge socket if available
@@ -697,7 +697,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 		// Inside the sandbox, a socat relay on UDP :53 converts queries to the
 		// DNS bridge (Unix socket -> host DNS server) or to TCP through the tunnel.
 		if dnsBridge != nil || (tun2socksPath != "" && features.CanUseTransparentProxy()) {
-			tmpResolv, err := os.CreateTemp("", "fence-resolv-*.conf")
+			tmpResolv, err := os.CreateTemp("", "greywall-resolv-*.conf")
 			if err == nil {
 				_, _ = tmpResolv.WriteString("nameserver 127.0.0.1\n")
 				tmpResolv.Close()
@@ -705,9 +705,9 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 				bwrapArgs = append(bwrapArgs, "--ro-bind", dnsRelayResolvConf, "/etc/resolv.conf")
 				if opts.Debug {
 					if dnsBridge != nil {
-						fmt.Fprintf(os.Stderr, "[fence:linux] DNS: overriding resolv.conf -> 127.0.0.1 (bridge to %s)\n", dnsBridge.DnsAddr)
+						fmt.Fprintf(os.Stderr, "[greywall:linux] DNS: overriding resolv.conf -> 127.0.0.1 (bridge to %s)\n", dnsBridge.DnsAddr)
 					} else {
-						fmt.Fprintf(os.Stderr, "[fence:linux] DNS: overriding resolv.conf -> 127.0.0.1 (TCP relay through tunnel)\n")
+						fmt.Fprintf(os.Stderr, "[greywall:linux] DNS: overriding resolv.conf -> 127.0.0.1 (TCP relay through tunnel)\n")
 					}
 				}
 			}
@@ -721,21 +721,21 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 		bwrapArgs = append(bwrapArgs, "--bind", tmpDir, tmpDir)
 	}
 
-	// Get fence executable path for Landlock wrapper
-	fenceExePath, _ := os.Executable()
+	// Get greywall executable path for Landlock wrapper
+	greywallExePath, _ := os.Executable()
 	// Skip Landlock wrapper if executable is in /tmp (test binaries are built there)
 	// The wrapper won't work because --tmpfs /tmp hides the test binary
-	executableInTmp := strings.HasPrefix(fenceExePath, "/tmp/")
-	// Skip Landlock wrapper if fence is being used as a library (executable is not fence)
-	// The wrapper re-executes the binary with --landlock-apply, which only fence understands
-	executableIsFence := strings.Contains(filepath.Base(fenceExePath), "fence")
-	useLandlockWrapper := opts.UseLandlock && features.CanUseLandlock() && fenceExePath != "" && !executableInTmp && executableIsFence
+	executableInTmp := strings.HasPrefix(greywallExePath, "/tmp/")
+	// Skip Landlock wrapper if greywall is being used as a library (executable is not greywall)
+	// The wrapper re-executes the binary with --landlock-apply, which only greywall understands
+	executableIsGreywall := strings.Contains(filepath.Base(greywallExePath), "greywall")
+	useLandlockWrapper := opts.UseLandlock && features.CanUseLandlock() && greywallExePath != "" && !executableInTmp && executableIsGreywall
 
 	if opts.Debug && executableInTmp {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Skipping Landlock wrapper (executable in /tmp, likely a test)\n")
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Skipping Landlock wrapper (executable in /tmp, likely a test)\n")
 	}
-	if opts.Debug && !executableIsFence {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Skipping Landlock wrapper (running as library, not fence CLI)\n")
+	if opts.Debug && !executableIsGreywall {
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Skipping Landlock wrapper (running as library, not greywall CLI)\n")
 	}
 
 	bwrapArgs = append(bwrapArgs, "--", shellPath, "-c")
@@ -743,7 +743,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 	// Build the inner command that sets up tun2socks and runs the user command
 	var innerScript strings.Builder
 
-	innerScript.WriteString("export FENCE_SANDBOX=1\n")
+	innerScript.WriteString("export GREYWALL_SANDBOX=1\n")
 
 	if proxyBridge != nil && tun2socksPath != "" && features.CanUseTransparentProxy() {
 		// Build the tun2socks proxy URL with credentials if available
@@ -773,7 +773,7 @@ socat TCP-LISTEN:${PROXY_PORT},fork,reuseaddr,bind=127.0.0.1 UNIX-CONNECT:%s >/d
 BRIDGE_PID=$!
 
 # Start tun2socks (transparent proxy via gvisor netstack)
-/tmp/fence-tun2socks -device tun0 -proxy %s >/dev/null 2>&1 &
+/tmp/greywall-tun2socks -device tun0 -proxy %s >/dev/null 2>&1 &
 TUN2SOCKS_PID=$!
 
 `, proxyBridge.SocketPath, tun2socksProxyURL))
@@ -853,13 +853,13 @@ sleep 0.3
 		if cfg != nil {
 			configJSON, err := json.Marshal(cfg)
 			if err == nil {
-				innerScript.WriteString(fmt.Sprintf("export FENCE_CONFIG_JSON=%s\n", ShellQuoteSingle(string(configJSON))))
+				innerScript.WriteString(fmt.Sprintf("export GREYWALL_CONFIG_JSON=%s\n", ShellQuoteSingle(string(configJSON))))
 			}
 		}
 
 		// Build wrapper command with proper quoting
 		// Use bash -c to preserve shell semantics (e.g., "echo hi && ls")
-		wrapperArgs := []string{fenceExePath, "--landlock-apply"}
+		wrapperArgs := []string{greywallExePath, "--landlock-apply"}
 		if opts.Debug {
 			wrapperArgs = append(wrapperArgs, "--debug")
 		}
@@ -897,7 +897,7 @@ sleep 0.3
 		if reverseBridge != nil && len(reverseBridge.Ports) > 0 {
 			featureList = append(featureList, fmt.Sprintf("inbound:%v", reverseBridge.Ports))
 		}
-		fmt.Fprintf(os.Stderr, "[fence:linux] Sandbox: %s\n", strings.Join(featureList, ", "))
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Sandbox: %s\n", strings.Join(featureList, ", "))
 	}
 
 	// Build the final command
@@ -926,7 +926,7 @@ func StartLinuxMonitor(pid int, opts LinuxSandboxOptions) (*LinuxMonitors, error
 	// or SECCOMP_RET_KILL (logs but kills process) or SECCOMP_RET_USER_NOTIF (complex).
 	// For now, we rely on the eBPF monitor to detect syscall failures.
 	if opts.Debug && opts.Monitor && features.SeccompLogLevel >= 1 {
-		fmt.Fprintf(os.Stderr, "[fence:linux] Note: seccomp violations are blocked but not logged (SECCOMP_RET_ERRNO is silent)\n")
+		fmt.Fprintf(os.Stderr, "[greywall:linux] Note: seccomp violations are blocked but not logged (SECCOMP_RET_ERRNO is silent)\n")
 	}
 
 	// Start eBPF monitor if available and requested
@@ -935,17 +935,17 @@ func StartLinuxMonitor(pid int, opts LinuxSandboxOptions) (*LinuxMonitors, error
 		ebpfMon := NewEBPFMonitor(pid, opts.Debug)
 		if err := ebpfMon.Start(); err != nil {
 			if opts.Debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] Failed to start eBPF monitor: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[greywall:linux] Failed to start eBPF monitor: %v\n", err)
 			}
 		} else {
 			monitors.EBPFMonitor = ebpfMon
 			if opts.Debug {
-				fmt.Fprintf(os.Stderr, "[fence:linux] eBPF monitor started for PID %d\n", pid)
+				fmt.Fprintf(os.Stderr, "[greywall:linux] eBPF monitor started for PID %d\n", pid)
 			}
 		}
 	} else if opts.Monitor && opts.Debug {
 		if !features.HasEBPF {
-			fmt.Fprintf(os.Stderr, "[fence:linux] eBPF monitoring not available (need CAP_BPF or root)\n")
+			fmt.Fprintf(os.Stderr, "[greywall:linux] eBPF monitoring not available (need CAP_BPF or root)\n")
 		}
 	}
 

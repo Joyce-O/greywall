@@ -3,7 +3,7 @@ package sandbox
 import (
 	"testing"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // TestLinux_NoProxyBlocksNetwork verifies that when no ProxyURL is set,

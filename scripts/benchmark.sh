@@ -10,7 +10,7 @@
 #   ./scripts/benchmark.sh [options]
 #
 # Options:
-#   -b, --binary PATH    Path to fence binary (default: ./fence or builds one)
+#   -b, --binary PATH    Path to greywall binary (default: ./greywall or builds one)
 #   -o, --output DIR     Output directory for results (default: ./benchmarks)
 #   -n, --runs N         Minimum runs per benchmark (default: 30)
 #   -q, --quick          Quick mode: fewer runs, skip slow benchmarks
@@ -19,7 +19,7 @@
 #
 # Requirements:
 #   - hyperfine (brew install hyperfine / apt install hyperfine)
-#   - go (for building fence if needed)
+#   - go (for building greywall if needed)
 #   - Optional: python3 (for local-server.py network benchmarks)
 
 set -euo pipefail
@@ -32,7 +32,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Defaults
-FENCE_BIN=""
+GREYWALL_BIN=""
 OUTPUT_DIR="./benchmarks"
 MIN_RUNS=30
 WARMUP=3
@@ -43,7 +43,7 @@ NETWORK=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         -b|--binary)
-            FENCE_BIN="$2"
+            GREYWALL_BIN="$2"
             shift 2
             ;;
         -o|--output)
@@ -75,21 +75,21 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Find or build fence binary
-if [[ -z "$FENCE_BIN" ]]; then
-    if [[ -x "./fence" ]]; then
-        FENCE_BIN="./fence"
-    elif [[ -x "./dist/fence" ]]; then
-        FENCE_BIN="./dist/fence"
+# Find or build greywall binary
+if [[ -z "$GREYWALL_BIN" ]]; then
+    if [[ -x "./greywall" ]]; then
+        GREYWALL_BIN="./greywall"
+    elif [[ -x "./dis./greywall" ]]; then
+        GREYWALL_BIN="./dis./greywall"
     else
-        echo -e "${BLUE}Building fence...${NC}"
-        go build -o ./fence ./cmd/fence
-        FENCE_BIN="./fence"
+        echo -e "${BLUE}Building greywall...${NC}"
+        go build -o ./greywall ./cm./greywall
+        GREYWALL_BIN="./greywall"
     fi
 fi
 
-if [[ ! -x "$FENCE_BIN" ]]; then
-    echo -e "${RED}Error: fence binary not found at $FENCE_BIN${NC}"
+if [[ ! -x "$GREYWALL_BIN" ]]; then
+    echo -e "${RED}Error: greywall binary not found at $GREYWALL_BIN${NC}"
     exit 1
 fi
 
@@ -109,7 +109,7 @@ WORKSPACE=$(mktemp -d -p .)
 trap 'rm -rf "$WORKSPACE"' EXIT
 
 # Create settings file for sandbox
-SETTINGS_FILE="$WORKSPACE/fence.json"
+SETTINGS_FILE="$WORKSPAC./greywall.json"
 cat > "$SETTINGS_FILE" << EOF
 {
   "filesystem": {
@@ -131,13 +131,13 @@ RESULTS_MD="$OUTPUT_DIR/${OS,,}-${ARCH}-${TIMESTAMP}.md"
 
 echo ""
 echo -e "${BLUE}==========================================${NC}"
-echo -e "${BLUE}Fence Sandbox Benchmarks${NC}"
+echo -e "${BLUE}Greywall Sandbox Benchmarks${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo ""
 echo "Platform:     $OS $ARCH"
 echo "Kernel:       $KERNEL"
 echo "Date:         $DATE"
-echo "Fence:        $FENCE_BIN"
+echo "Greywall:        $GREYWALL_BIN"
 echo "Output:       $OUTPUT_DIR"
 echo "Min runs:     $MIN_RUNS"
 echo ""
@@ -169,11 +169,11 @@ echo ""
 
 run_bench "true" \
     --command-name "unsandboxed" "true" \
-    --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -- true"
+    --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -- true"
 
 run_bench "echo" \
     --command-name "unsandboxed" "echo hello >/dev/null" \
-    --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -c 'echo hello' >/dev/null"
+    --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -c 'echo hello' >/dev/null"
 
 # ============================================================================
 # Tool compatibility benchmarks
@@ -185,7 +185,7 @@ echo ""
 if command -v python3 &> /dev/null; then
     run_bench "python" \
         --command-name "unsandboxed" "python3 -c 'pass'" \
-        --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -c \"python3 -c 'pass'\""
+        --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -c \"python3 -c 'pass'\""
 else
     echo -e "${YELLOW}Skipping python3 (not found)${NC}"
 fi
@@ -193,7 +193,7 @@ fi
 if command -v node &> /dev/null && [[ "$QUICK" == "false" ]]; then
     run_bench "node" \
         --command-name "unsandboxed" "node -e ''" \
-        --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -c \"node -e ''\""
+        --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -c \"node -e ''\""
 else
     echo -e "${YELLOW}Skipping node (not found or quick mode)${NC}"
 fi
@@ -208,7 +208,7 @@ echo ""
 if command -v git &> /dev/null && [[ -d .git ]]; then
     run_bench "git-status" \
         --command-name "unsandboxed" "git status --porcelain >/dev/null" \
-        --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -- git status --porcelain >/dev/null"
+        --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -- git status --porcelain >/dev/null"
 else
     echo -e "${YELLOW}Skipping git status (not in a git repo)${NC}"
 fi
@@ -216,7 +216,7 @@ fi
 if command -v rg &> /dev/null && [[ "$QUICK" == "false" ]]; then
     run_bench "ripgrep" \
         --command-name "unsandboxed" "rg -n 'package' -S . >/dev/null 2>&1 || true" \
-        --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -c \"rg -n 'package' -S . >/dev/null 2>&1\" || true"
+        --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -c \"rg -n 'package' -S . >/dev/null 2>&1\" || true"
 else
     echo -e "${YELLOW}Skipping ripgrep (not found or quick mode)${NC}"
 fi
@@ -230,11 +230,11 @@ echo ""
 
 run_bench "file-write" \
     --command-name "unsandboxed" "echo 'test' > $WORKSPACE/test.txt" \
-    --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -c \"echo 'test' > $WORKSPACE/test.txt\""
+    --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -c \"echo 'test' > $WORKSPACE/test.txt\""
 
 run_bench "file-read" \
     --command-name "unsandboxed" "cat $WORKSPACE/test.txt >/dev/null" \
-    --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -c 'cat $WORKSPACE/test.txt' >/dev/null"
+    --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -c 'cat $WORKSPACE/test.txt' >/dev/null"
 
 # ============================================================================
 # Monitor mode benchmarks (optional)
@@ -245,8 +245,8 @@ if [[ "$QUICK" == "false" ]]; then
     echo ""
     
     run_bench "monitor-true" \
-        --command-name "sandboxed" "$FENCE_BIN -s $SETTINGS_FILE -- true" \
-        --command-name "sandboxed+monitor" "$FENCE_BIN -m -s $SETTINGS_FILE -- true"
+        --command-name "sandboxed" "$GREYWALL_BIN -s $SETTINGS_FILE -- true" \
+        --command-name "sandboxed+monitor" "$GREYWALL_BIN -m -s $SETTINGS_FILE -- true"
 fi
 
 # ============================================================================
@@ -266,7 +266,7 @@ if [[ "$NETWORK" == "true" ]]; then
         sleep 1
         
         # Create network settings
-        NET_SETTINGS="$WORKSPACE/fence-net.json"
+        NET_SETTINGS="$WORKSPAC./greywall-net.json"
         cat > "$NET_SETTINGS" << EOF
 {
   "network": {
@@ -281,7 +281,7 @@ EOF
         if command -v curl &> /dev/null; then
             run_bench "network-curl" \
                 --command-name "unsandboxed" "curl -s http://127.0.0.1:8765/ >/dev/null" \
-                --command-name "sandboxed" "$FENCE_BIN -s $NET_SETTINGS -c 'curl -s http://127.0.0.1:8765/' >/dev/null"
+                --command-name "sandboxed" "$GREYWALL_BIN -s $NET_SETTINGS -c 'curl -s http://127.0.0.1:8765/' >/dev/null"
         fi
         
         kill $SERVER_PID 2>/dev/null || true
@@ -303,7 +303,7 @@ echo "  \"platform\": \"$OS\"," >> "$RESULTS_JSON"
 echo "  \"arch\": \"$ARCH\"," >> "$RESULTS_JSON"
 echo "  \"kernel\": \"$KERNEL\"," >> "$RESULTS_JSON"
 echo "  \"date\": \"$DATE\"," >> "$RESULTS_JSON"
-echo "  \"fence_version\": \"$($FENCE_BIN --version 2>/dev/null || echo unknown)\"," >> "$RESULTS_JSON"
+echo "  \"greywall_version\": \"$($GREYWALL_BIN --version 2>/dev/null || echo unknown)\"," >> "$RESULTS_JSON"
 echo "  \"benchmarks\": {" >> "$RESULTS_JSON"
 
 first=true
@@ -324,12 +324,12 @@ echo "}" >> "$RESULTS_JSON"
 
 # Generate Markdown report
 cat > "$RESULTS_MD" << EOF
-# Fence Benchmark Results
+# Greywall Benchmark Results
 
 **Platform:** $OS $ARCH  
 **Kernel:** $KERNEL  
 **Date:** $DATE  
-**Fence:** $($FENCE_BIN --version 2>/dev/null || echo unknown)
+**Greywall:** $($GREYWALL_BIN --version 2>/dev/null || echo unknown)
 
 ## Summary
 

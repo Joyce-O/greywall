@@ -18,8 +18,8 @@ builds:
       - -X main.version={{.Version}}
       - -X main.buildTime={{.Date}}
       - -X main.gitCommit={{.Commit}}
-    binary: fence
-    main: ./cmd/fence
+    binary: greywall
+    main: ./cmd/greywall
 
 archives:
   - formats: [tar.gz]
@@ -77,7 +77,7 @@ changelog:
 
 release:
   github:
-    owner: Use-Tusk
-    name: fence
+    owner: monadical
+    name: greywall
   draft: false
   prerelease: auto

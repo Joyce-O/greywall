@@ -5,7 +5,7 @@ package sandbox
 import (
 	"fmt"
 
-	"github.com/Use-Tusk/fence/internal/config"
+	"gitea.app.monadical.io/monadical/greywall/internal/config"
 )
 
 // ProxyBridge is a stub for non-Linux platforms.

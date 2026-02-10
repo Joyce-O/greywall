@@ -60,12 +60,12 @@ func (s *SeccompFilter) GenerateBPFFilter() (string, error) {
 	}
 
 	// Create a temporary directory for the filter
-	tmpDir := filepath.Join(os.TempDir(), "fence-seccomp")
+	tmpDir := filepath.Join(os.TempDir(), "greywall-seccomp")
 	if err := os.MkdirAll(tmpDir, 0o700); err != nil {
 		return "", fmt.Errorf("failed to create seccomp dir: %w", err)
 	}
 
-	filterPath := filepath.Join(tmpDir, fmt.Sprintf("fence-seccomp-%d.bpf", os.Getpid()))
+	filterPath := filepath.Join(tmpDir, fmt.Sprintf("greywall-seccomp-%d.bpf", os.Getpid()))
 
 	// Generate the filter using the seccomp library or raw BPF
 	// For now, we'll use bwrap's built-in seccomp support via --seccomp
@@ -77,7 +77,7 @@ func (s *SeccompFilter) GenerateBPFFilter() (string, error) {
 	}
 
 	if s.debug {
-		fmt.Fprintf(os.Stderr, "[fence:seccomp] Generated BPF filter at %s\n", filterPath)
+		fmt.Fprintf(os.Stderr, "[greywall:seccomp] Generated BPF filter at %s\n", filterPath)
 	}
 
 	return filterPath, nil
