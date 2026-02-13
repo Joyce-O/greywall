@@ -519,8 +519,14 @@ func buildDenyByDefaultMounts(cfg *config.Config, cwd string, debug bool) []stri
 			if fileExists(p) && canMountOver(p) &&
 				!strings.HasPrefix(p, "/dev/") && !strings.HasPrefix(p, "/proc/") && !boundPaths[p] {
 				boundPaths[p] = true
-				// Create intermediary dirs if needed
-				for _, dir := range intermediaryDirs("/", p) {
+				// Create intermediary dirs if needed.
+				// For files, only create dirs up to the parent to avoid
+				// creating a directory at the file's path.
+				dirTarget := p
+				if !isDirectory(p) {
+					dirTarget = filepath.Dir(p)
+				}
+				for _, dir := range intermediaryDirs("/", dirTarget) {
 					if !isSystemMountPoint(dir) {
 						args = append(args, "--dir", dir)
 					}
@@ -533,7 +539,11 @@ func buildDenyByDefaultMounts(cfg *config.Config, cwd string, debug bool) []stri
 			if !ContainsGlobChars(normalized) && fileExists(normalized) && canMountOver(normalized) &&
 				!strings.HasPrefix(normalized, "/dev/") && !strings.HasPrefix(normalized, "/proc/") && !boundPaths[normalized] {
 				boundPaths[normalized] = true
-				for _, dir := range intermediaryDirs("/", normalized) {
+				dirTarget := normalized
+				if !isDirectory(normalized) {
+					dirTarget = filepath.Dir(normalized)
+				}
+				for _, dir := range intermediaryDirs("/", dirTarget) {
 					if !isSystemMountPoint(dir) {
 						args = append(args, "--dir", dir)
 					}
