@@ -3,6 +3,7 @@ package sandbox
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -417,6 +418,9 @@ func TestBuildTemplateNoAllowRead(t *testing.T) {
 }
 
 func TestGenerateLearnedTemplate(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("strace log parsing is only available on Linux")
+	}
 	// Create a temp dir for templates
 	tmpDir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", tmpDir)

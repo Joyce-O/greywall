@@ -45,11 +45,14 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
+      - name: Download tun2socks for embedding
+        run: make download-tun2socks
+
       - name: Lint
         uses: golangci/golangci-lint-action@v6
         with:
           install-mode: goinstall
-          version: v1.64.8
+          version: v2.10.1
 
   test-linux:
     name: Test (Linux)
@@ -107,6 +110,9 @@ jobs:
           bwrap --ro-bind / / -- /bin/echo "bwrap works!"
           echo "=== Testing bwrap with user namespace ==="
           bwrap --ro-bind / / --unshare-user --uid 0 --gid 0 -- /bin/echo "bwrap user namespace works!"
+
+      - name: Download tun2socks for embedding
+        run: make download-tun2socks
 
       - name: Run unit and integration tests
         run: make test-ci
