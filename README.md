@@ -159,6 +159,8 @@ Greywall can also be used as a [Go package](docs/library.md).
 
 ## Attribution
 
-Greywall is based on [Fence](https://github.com/Use-Tusk/fence) by Use-Tusk.
+Greywall is a fork of [Fence](https://github.com/Use-Tusk/fence), originally
+created by [JY Tan](https://github.com/jy-tan) at [Tusk AI, Inc](https://github.com/Use-Tusk).
+Copyright 2025 Tusk AI, Inc. Licensed under the Apache License 2.0.
 
 Inspired by Anthropic's [sandbox-runtime](https://github.com/anthropic-experimental/sandbox-runtime).
