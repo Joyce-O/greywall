@@ -5,7 +5,7 @@ Greywall can be used as a Go library to sandbox commands programmatically.
 ## Installation
 
 ```bash
-go get gitea.app.monadical.io/monadical/greywall
+go get github.com/GreyhavenHQ/greywall
 ```
 
 ## Quick Start
@@ -17,7 +17,7 @@ import (
     "fmt"
     "os/exec"
 
-    "gitea.app.monadical.io/monadical/greywall/pkg/greywall"
+    "github.com/GreyhavenHQ/greywall/pkg/greywall"
 )
 
 func main() {

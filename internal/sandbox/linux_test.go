@@ -3,7 +3,7 @@ package sandbox
 import (
 	"testing"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // TestLinux_NoProxyBlocksNetwork verifies that when no ProxyURL is set,

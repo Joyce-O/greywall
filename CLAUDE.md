@@ -55,7 +55,7 @@ scripts/               Smoke tests, benchmarks, release
 - **Language:** Go 1.25+
 - **Formatter:** `gofumpt` (enforced in CI)
 - **Linter:** `golangci-lint` v2 (config in `.golangci.yml`)
-- **Import order:** stdlib, third-party, local (`gitea.app.monadical.io/monadical/greywall`)
+- **Import order:** stdlib, third-party, local (`github.com/GreyhavenHQ/greywall`)
 - **Platform code:** build tags (`//go:build linux`, `//go:build darwin`) with `*_stub.go` for unsupported platforms
 - **Error handling:** custom error types (e.g., `CommandBlockedError`)
 - **Logging:** stderr with `[greywall:component]` prefixes

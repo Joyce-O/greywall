@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // ProxyBridge bridges sandbox to an external SOCKS5 proxy via Unix socket.

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/platform"
+	"github.com/GreyhavenHQ/greywall/internal/platform"
 )
 
 // LogMonitor monitors sandbox violations via macOS log stream.

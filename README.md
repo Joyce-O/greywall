@@ -2,6 +2,8 @@
 
 Greywall wraps commands in a deny-by-default sandbox. Filesystem access is restricted to the current directory by default — use `--learning` to trace what else a command needs and auto-generate a config template. All network traffic is transparently redirected through [greyproxy](https://github.com/GreyhavenHQ/greyproxy), a deny-by-default transparent proxy with a live allow/deny dashboard. Run `greywall setup` to install greyproxy automatically.
 
+*Note: linux only at the moment, macos support is coming!*
+
 ```bash
 # Sandbox a command (network + filesystem denied by default)
 greywall -- curl https://example.com
@@ -15,10 +17,10 @@ greywall -c "rm -rf /"  # → blocked by command deny rules
 
 ## Install
 
-**macOS / Linux:**
+**Linux:**
 
 ```bash
-curl -fsSL https://gitea.app.monadical.io/monadical/greywall/raw/branch/main/install.sh | sh
+curl -fsSL https://github.com/GreyhavenHQ/greywall/raw/branch/main/install.sh | sh
 ```
 
 <details>
@@ -27,13 +29,13 @@ curl -fsSL https://gitea.app.monadical.io/monadical/greywall/raw/branch/main/ins
 **Go install:**
 
 ```bash
-go install gitea.app.monadical.io/monadical/greywall/cmd/greywall@latest
+go install github.com/GreyhavenHQ/greywall/cmd/greywall@latest
 ```
 
 **Build from source:**
 
 ```bash
-git clone https://gitea.app.monadical.io/monadical/greywall
+git clone https://github.com/GreyhavenHQ/greywall
 cd greywall
 make setup && make build
 ```

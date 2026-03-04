@@ -2,9 +2,9 @@
 package greywall
 
 import (
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
-	"gitea.app.monadical.io/monadical/greywall/internal/platform"
-	"gitea.app.monadical.io/monadical/greywall/internal/sandbox"
+	"github.com/GreyhavenHQ/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/platform"
+	"github.com/GreyhavenHQ/greywall/internal/sandbox"
 )
 
 // IsSupported returns true if the current platform supports sandboxing (macOS/Linux).

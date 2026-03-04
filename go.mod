@@ -1,4 +1,4 @@
-module gitea.app.monadical.io/monadical/greywall
+module github.com/GreyhavenHQ/greywall
 
 go 1.25
 

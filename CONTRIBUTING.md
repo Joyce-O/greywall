@@ -12,7 +12,7 @@ If you have any questions, feel free to open an issue.
 - Clone and prepare:
 
   ```bash
-  git clone https://gitea.app.monadical.io/monadical/greywall
+  git clone https://github.com/GreyhavenHQ/greywall
   cd greywall
   make setup   # Install deps and lint tools
   make build   # Build the binary

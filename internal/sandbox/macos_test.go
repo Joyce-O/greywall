@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // TestMacOS_NetworkRestrictionWithProxy verifies that when a proxy URL is set,

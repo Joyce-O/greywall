@@ -13,10 +13,10 @@ import (
 	"strings"
 	"syscall"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
-	"gitea.app.monadical.io/monadical/greywall/internal/platform"
-	"gitea.app.monadical.io/monadical/greywall/internal/proxy"
-	"gitea.app.monadical.io/monadical/greywall/internal/sandbox"
+	"github.com/GreyhavenHQ/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/platform"
+	"github.com/GreyhavenHQ/greywall/internal/proxy"
+	"github.com/GreyhavenHQ/greywall/internal/sandbox"
 	"github.com/spf13/cobra"
 )
 

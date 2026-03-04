@@ -3,7 +3,7 @@ package sandbox
 import (
 	"testing"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 func TestCheckCommand_BasicDeny(t *testing.T) {

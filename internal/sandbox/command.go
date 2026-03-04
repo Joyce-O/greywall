@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // CommandBlockedError is returned when a command is blocked by policy.

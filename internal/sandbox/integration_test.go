@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // ============================================================================

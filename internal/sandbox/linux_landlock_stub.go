@@ -2,7 +2,7 @@
 
 package sandbox
 
-import "gitea.app.monadical.io/monadical/greywall/internal/config"
+import "github.com/GreyhavenHQ/greywall/internal/config"
 
 // ApplyLandlockFromConfig is a no-op on non-Linux platforms.
 func ApplyLandlockFromConfig(cfg *config.Config, cwd string, socketPaths []string, debug bool) error {

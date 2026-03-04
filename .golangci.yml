@@ -35,12 +35,12 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(gitea.app.monadical.io/monadical/greywall)
+        - prefix(github.com/GreyhavenHQ/greywall)
     gofmt:
       simplify: true
     goimports:
       local-prefixes:
-        - gitea.app.monadical.io/monadical/greywall
+        - github.com/GreyhavenHQ/greywall
   exclusions:
     generated: lax
     paths:

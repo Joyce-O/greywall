@@ -5,7 +5,7 @@
 ### From Source (recommended for now)
 
 ```bash
-git clone https://gitea.app.monadical.io/monadical/greywall
+git clone https://github.com/GreyhavenHQ/greywall
 cd greywall
 go build -o greywall ./cmd/greywall
 sudo mv greywall /usr/local/bin/
@@ -14,7 +14,7 @@ sudo mv greywall /usr/local/bin/
 ### Using Go Install
 
 ```bash
-go install gitea.app.monadical.io/monadical/greywall/cmd/greywall@latest
+go install github.com/GreyhavenHQ/greywall/cmd/greywall@latest
 ```
 
 ### Linux Dependencies

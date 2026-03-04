@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 	"github.com/bmatcuk/doublestar/v4"
 	"golang.org/x/sys/unix"
 )

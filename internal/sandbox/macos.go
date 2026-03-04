@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // sessionSuffix is a unique identifier for this process session.

@@ -5,7 +5,7 @@ package sandbox
 import (
 	"fmt"
 
-	"gitea.app.monadical.io/monadical/greywall/internal/config"
+	"github.com/GreyhavenHQ/greywall/internal/config"
 )
 
 // ProxyBridge is a stub for non-Linux platforms.
