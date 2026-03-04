@@ -92,7 +92,7 @@ echo "$BINARY $VERSION installed to $INSTALL_DIR"
 # Check if greyproxy is installed, offer to set it up if not
 if ! command -v greyproxy >/dev/null 2>&1 && [ ! -x "$INSTALL_DIR/greyproxy" ]; then
   echo ""
-  echo "greyproxy is not installed. It is required for network proxying in sandboxed commands."
+  echo "greyproxy is not installed. It pairs with greywall to proxy and filter network traffic for all sandboxed commands."
   printf "Run 'greywall setup' to install it now? [Y/n] "
   read -r REPLY </dev/tty
   case "$REPLY" in
