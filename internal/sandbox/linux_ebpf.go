@@ -110,7 +110,7 @@ func (m *EBPFMonitor) tryBpftrace(ctx context.Context) error {
 
 	if _, err := tmpFile.WriteString(script); err != nil {
 		_ = tmpFile.Close()
-		_ = os.Remove(scriptPath)
+		_ = os.Remove(scriptPath) //nolint:gosec // scriptPath from TempFile
 		return fmt.Errorf("failed to write script: %w", err)
 	}
 	_ = tmpFile.Close()
@@ -136,10 +136,10 @@ func (m *EBPFMonitor) tryBpftrace(ctx context.Context) error {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if m.debug {
-				fmt.Fprintf(os.Stderr, "[greywall:ebpf:trace] %s\n", line)
+				fmt.Fprintf(os.Stderr, "[greywall:ebpf:trace] %s\n", line) //nolint:gosec // stderr output
 			}
 			if violation := m.parseBpftraceOutput(line); violation != "" {
-				fmt.Fprintf(os.Stderr, "%s\n", violation)
+				fmt.Fprintf(os.Stderr, "%s\n", violation) //nolint:gosec // stderr output
 			}
 		}
 	}()
@@ -150,7 +150,7 @@ func (m *EBPFMonitor) tryBpftrace(ctx context.Context) error {
 			scanner := bufio.NewScanner(stderr)
 			for scanner.Scan() {
 				line := scanner.Text()
-				fmt.Fprintf(os.Stderr, "[greywall:ebpf:err] %s\n", line)
+				fmt.Fprintf(os.Stderr, "[greywall:ebpf:err] %s\n", line) //nolint:gosec // stderr output
 			}
 		}()
 	}

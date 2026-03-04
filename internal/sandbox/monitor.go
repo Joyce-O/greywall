@@ -66,7 +66,7 @@ func (m *LogMonitor) Start() error {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if violation := parseViolation(line); violation != "" {
-				fmt.Fprintf(os.Stderr, "%s\n", violation)
+				fmt.Fprintf(os.Stderr, "%s\n", violation) //nolint:gosec // stderr output
 			}
 		}
 	}()

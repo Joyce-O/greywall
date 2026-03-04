@@ -676,12 +676,12 @@ parseCommand:
 	// Find the executable
 	execPath, err := exec.LookPath(command[0])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Error: command not found: %s\n", command[0])
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Error: command not found: %s\n", command[0]) //nolint:gosec // stderr output
 		os.Exit(127)
 	}
 
 	if debugMode {
-		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Exec: %s %v\n", execPath, command[1:])
+		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Exec: %s %v\n", execPath, command[1:]) //nolint:gosec // stderr output
 	}
 
 	// Sanitize environment (strips LD_PRELOAD, etc.)

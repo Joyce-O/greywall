@@ -143,7 +143,7 @@ func (f *LinuxFeatures) detectLandlock() {
 	// ret contains the ABI version number (1, 2, 3, 4, etc.)
 	if err == 0 {
 		f.HasLandlock = true
-		f.LandlockABI = int(ret)
+		f.LandlockABI = int(ret) //nolint:gosec // ABI version is a small integer
 		return
 	}
 
@@ -159,8 +159,8 @@ func (f *LinuxFeatures) detectLandlock() {
 	)
 	if err == 0 {
 		f.HasLandlock = true
-		f.LandlockABI = 1 // Minimum supported version
-		_ = unix.Close(int(ret))
+		f.LandlockABI = 1        // Minimum supported version
+		_ = unix.Close(int(ret)) //nolint:gosec // fd from syscall fits in int
 	}
 }
 

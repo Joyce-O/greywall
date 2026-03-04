@@ -246,7 +246,7 @@ func (l *LandlockRuleset) Initialize() error {
 		return fmt.Errorf("failed to create Landlock ruleset: %w", err)
 	}
 
-	l.rulesetFd = int(fd)
+	l.rulesetFd = int(fd) //nolint:gosec // fd from syscall fits in int
 	l.initialized = true
 
 	if l.debug {
@@ -420,7 +420,7 @@ func (l *LandlockRuleset) addPathRule(path string, access uint64) error {
 
 	_, _, errno := unix.Syscall(
 		unix.SYS_LANDLOCK_ADD_RULE,
-		uintptr(l.rulesetFd),
+		uintptr(l.rulesetFd), //nolint:gosec // fd fits in uintptr
 		LANDLOCK_RULE_PATH_BENEATH,
 		uintptr(unsafe.Pointer(&attr)), //nolint:gosec // required for syscall
 	)
@@ -449,7 +449,7 @@ func (l *LandlockRuleset) Apply() error {
 	// Apply the ruleset
 	_, _, errno := unix.Syscall(
 		unix.SYS_LANDLOCK_RESTRICT_SELF,
-		uintptr(l.rulesetFd),
+		uintptr(l.rulesetFd), //nolint:gosec // fd fits in uintptr
 		0,
 		0,
 	)

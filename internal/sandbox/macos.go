@@ -422,8 +422,8 @@ func GenerateSandboxProfile(params MacOSSandboxParams) string {
 
 	// Header
 	profile.WriteString("(version 1)\n")
-	profile.WriteString(fmt.Sprintf("(deny default (with message %q))\n\n", logTag))
-	profile.WriteString(fmt.Sprintf("; LogTag: %s\n\n", logTag))
+	fmt.Fprintf(&profile, "(deny default (with message %q))\n\n", logTag)
+	fmt.Fprintf(&profile, "; LogTag: %s\n\n", logTag)
 
 	// Essential permissions - based on Chrome sandbox policy
 	profile.WriteString(`; Essential permissions - based on Chrome sandbox policy
@@ -586,14 +586,13 @@ func GenerateSandboxProfile(params MacOSSandboxParams) string {
 		} else if len(params.AllowUnixSockets) > 0 {
 			for _, socketPath := range params.AllowUnixSockets {
 				normalized := NormalizePath(socketPath)
-				profile.WriteString(fmt.Sprintf("(allow network* (subpath %s))\n", escapePath(normalized)))
+				fmt.Fprintf(&profile, "(allow network* (subpath %s))\n", escapePath(normalized))
 			}
 		}
 
 		// Allow outbound to the external proxy host:port
 		if params.ProxyHost != "" && params.ProxyPort != "" {
-			profile.WriteString(fmt.Sprintf(`(allow network-outbound (remote ip "%s:%s"))
-`, params.ProxyHost, params.ProxyPort))
+			fmt.Fprintf(&profile, "(allow network-outbound (remote ip \"%s:%s\"))\n", params.ProxyHost, params.ProxyPort)
 		}
 	}
 	profile.WriteString("\n")

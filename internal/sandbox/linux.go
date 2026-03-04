@@ -291,7 +291,7 @@ func (b *ReverseBridge) Cleanup() {
 }
 
 func fileExists(path string) bool {
-	_, err := os.Stat(path)
+	_, err := os.Stat(path) //nolint:gosec // internal paths only
 	return err == nil
 }
 
@@ -1003,7 +1003,7 @@ func WrapCommandLinuxWithOptions(cfg *config.Config, command string, proxyBridge
 		}
 
 		// Set up transparent proxy via TUN device + tun2socks
-		innerScript.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&innerScript, `
 # Bring up loopback interface (needed for socat to bind on 127.0.0.1)
 ip link set lo up
 
@@ -1022,22 +1022,22 @@ BRIDGE_PID=$!
 /tmp/greywall-tun2socks -device tun0 -proxy %s >/dev/null 2>&1 &
 TUN2SOCKS_PID=$!
 
-`, proxyBridge.SocketPath, tun2socksProxyURL))
+`, proxyBridge.SocketPath, tun2socksProxyURL)
 
 		// DNS relay: only needed when using a dedicated DNS bridge.
 		// When using tun2socks without a DNS bridge, resolv.conf is configured with
 		// "options use-vc" to force TCP DNS, which tun2socks handles natively.
 		if dnsBridge != nil {
 			// Dedicated DNS bridge: UDP :53 -> Unix socket -> host DNS server
-			innerScript.WriteString(fmt.Sprintf(`# DNS relay: UDP queries -> Unix socket -> host DNS server (%s)
+			fmt.Fprintf(&innerScript, `# DNS relay: UDP queries -> Unix socket -> host DNS server (%s)
 socat UDP4-RECVFROM:53,fork,reuseaddr UNIX-CONNECT:%s >/dev/null 2>&1 &
 DNS_RELAY_PID=$!
 
-`, dnsBridge.DnsAddr, dnsBridge.SocketPath))
+`, dnsBridge.DnsAddr, dnsBridge.SocketPath)
 		}
 	} else if proxyBridge != nil {
 		// Fallback: no TUN support, use env-var-based proxying
-		innerScript.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&innerScript, `
 # Bring up loopback interface (needed for socat to bind on 127.0.0.1)
 ip link set lo up 2>/dev/null
 
@@ -1055,7 +1055,7 @@ export https_proxy=socks5h://127.0.0.1:${PROXY_PORT}
 export NO_PROXY=localhost,127.0.0.1
 export no_proxy=localhost,127.0.0.1
 
-`, proxyBridge.SocketPath))
+`, proxyBridge.SocketPath)
 	}
 
 	// Set up reverse (inbound) socat listeners inside the sandbox
@@ -1064,11 +1064,11 @@ export no_proxy=localhost,127.0.0.1
 		for i, port := range reverseBridge.Ports {
 			socketPath := reverseBridge.SocketPaths[i]
 			// Listen on Unix socket, forward to localhost:port inside the sandbox
-			innerScript.WriteString(fmt.Sprintf(
+			fmt.Fprintf(&innerScript,
 				"socat UNIX-LISTEN:%s,fork,reuseaddr TCP:127.0.0.1:%d >/dev/null 2>&1 &\n",
 				socketPath, port,
-			))
-			innerScript.WriteString(fmt.Sprintf("REV_%d_PID=$!\n", port))
+			)
+			fmt.Fprintf(&innerScript, "REV_%d_PID=$!\n", port)
 		}
 		innerScript.WriteString("\n")
 	}
@@ -1096,7 +1096,7 @@ sleep 0.3
 	// the common case of background daemons (LSP servers, watchers).
 	switch {
 	case opts.Learning && opts.StraceLogPath != "":
-		innerScript.WriteString(fmt.Sprintf(`# Learning mode: trace filesystem access (foreground for terminal access)
+		fmt.Fprintf(&innerScript, `# Learning mode: trace filesystem access (foreground for terminal access)
 strace -f -qq -I2 -e trace=openat,open,creat,mkdir,mkdirat,unlinkat,renameat,renameat2,symlinkat,linkat -o %s -- %s
 GREYWALL_STRACE_EXIT=$?
 # Kill any orphaned child processes (LSP servers, file watchers, etc.)
@@ -1106,7 +1106,7 @@ sleep 0.1
 exit $GREYWALL_STRACE_EXIT
 `,
 			ShellQuoteSingle(opts.StraceLogPath), command,
-		))
+		)
 	case useLandlockWrapper:
 		// Use Landlock wrapper if available
 		// Pass config via environment variable (serialized as JSON)
@@ -1114,7 +1114,7 @@ exit $GREYWALL_STRACE_EXIT
 		if cfg != nil {
 			configJSON, err := json.Marshal(cfg)
 			if err == nil {
-				innerScript.WriteString(fmt.Sprintf("export GREYWALL_CONFIG_JSON=%s\n", ShellQuoteSingle(string(configJSON))))
+				fmt.Fprintf(&innerScript, "export GREYWALL_CONFIG_JSON=%s\n", ShellQuoteSingle(string(configJSON)))
 			}
 		}
 
@@ -1127,7 +1127,7 @@ exit $GREYWALL_STRACE_EXIT
 		wrapperArgs = append(wrapperArgs, "--", "bash", "-c", command)
 
 		// Use exec to replace bash with the wrapper (which will exec the command)
-		innerScript.WriteString(fmt.Sprintf("exec %s\n", ShellQuote(wrapperArgs)))
+		fmt.Fprintf(&innerScript, "exec %s\n", ShellQuote(wrapperArgs))
 	default:
 		innerScript.WriteString(command)
 		innerScript.WriteString("\n")
