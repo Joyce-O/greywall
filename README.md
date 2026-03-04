@@ -127,7 +127,7 @@ Greywall reads from `~/.config/greywall/greywall.json` by default (or `~/Library
 
 Use `greywall --settings ./custom.json` to specify a different config file.
 
-By default (when connected to GreyHaven), traffic routes through the GreyHaven SOCKS5 proxy at `localhost:42052` with DNS via `localhost:42053`.
+By default, traffic routes through the GreyProxy SOCKS5 proxy at `localhost:43052` with DNS via `localhost:43053`.
 
 ## Features
 
