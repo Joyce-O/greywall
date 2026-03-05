@@ -49,9 +49,8 @@ jobs:
         run: make download-tun2socks
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
-          install-mode: goinstall
           version: v2.10.1
 
   test-linux:
@@ -93,8 +92,8 @@ jobs:
           # Configure subuid/subgid for the runner user (required for unprivileged user namespaces)
           echo "$(whoami):100000:65536" | sudo tee -a /etc/subuid
           echo "$(whoami):100000:65536" | sudo tee -a /etc/subgid
-          # Make bwrap setuid so it can create namespaces as non-root user
-          sudo chmod u+s $(which bwrap)
+          # Note: unprivileged user namespaces are enabled on modern Ubuntu runners,
+          # so bwrap does NOT need setuid. Setuid mode disallows --cap-add for non-root.
 
       - name: Verify sandbox dependencies
         run: |
@@ -105,7 +104,7 @@ jobs:
           echo "Kernel version: $(uname -r)"
           echo "uidmap installed: $(which newuidmap 2>/dev/null && echo yes || echo no)"
           echo "subuid configured: $(grep $(whoami) /etc/subuid 2>/dev/null || echo 'not configured')"
-          echo "bwrap setuid: $(ls -la $(which bwrap) | grep -q '^-rws' && echo yes || echo no)"
+          echo "bwrap permissions: $(ls -la $(which bwrap))"
           echo "=== Testing bwrap basic functionality ==="
           bwrap --ro-bind / / -- /bin/echo "bwrap works!"
           echo "=== Testing bwrap with user namespace ==="
