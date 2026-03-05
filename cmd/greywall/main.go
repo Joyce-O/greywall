@@ -442,7 +442,7 @@ func runCheck(_ *cobra.Command, _ []string) error {
 		}
 		if status.Running {
 			fmt.Println(sandbox.CheckOK("greyproxy running (SOCKS5 :43052, DNS :43053)"))
-			fmt.Printf("    Dashboard: https://localhost:43080\n")
+			fmt.Printf("    Dashboard: http://localhost:43080\n")
 		} else {
 			fmt.Println(sandbox.CheckFail("greyproxy running"))
 			steps = append(steps, "greywall setup")
@@ -462,7 +462,7 @@ func runCheck(_ *cobra.Command, _ []string) error {
 	} else {
 		fmt.Printf("\nAll checks passed. Welcome to greywall :)\n")
 		fmt.Printf("\nGet started:\n")
-		fmt.Printf("  1. Open your dashboard: https://localhost:43080\n")
+		fmt.Printf("  1. Open your dashboard: http://localhost:43080\n")
 		fmt.Printf("  2. Try it: greywall -- curl https://greyhaven.co\n")
 		fmt.Printf("     The request will be blocked — allow it on the dashboard, then try again\n")
 		fmt.Printf("  3. Learn a tool: greywall --learning -- opencode\n")
