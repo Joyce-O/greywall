@@ -494,6 +494,20 @@ func runSetup(_ *cobra.Command, _ []string) error {
 	status := proxy.Detect()
 
 	if status.Installed && status.Running {
+		latest, err := proxy.CheckLatestVersion()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not check for updates: %v\n", err)
+			fmt.Printf("greyproxy is already installed (v%s) and running.\n", status.Version)
+			fmt.Printf("Run 'greywall check' for full status.\n")
+			return nil
+		}
+		if proxy.IsOlderVersion(status.Version, latest) {
+			fmt.Printf("greyproxy update available: v%s → v%s\n", status.Version, latest)
+			fmt.Printf("Upgrading...\n")
+			return proxy.Install(proxy.InstallOptions{
+				Output: os.Stderr,
+			})
+		}
 		fmt.Printf("greyproxy is already installed (v%s) and running.\n", status.Version)
 		fmt.Printf("Run 'greywall check' for full status.\n")
 		return nil

@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -39,8 +40,55 @@ type InstallOptions struct {
 	Output io.Writer // progress output (typically os.Stderr)
 }
 
+// CheckLatestVersion fetches the latest greyproxy release tag from GitHub
+// and returns the version string (without the "v" prefix).
+func CheckLatestVersion() (string, error) {
+	rel, err := fetchLatestRelease()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(rel.TagName, "v"), nil
+}
+
+// IsOlderVersion returns true if current is strictly older than latest,
+// or if current is not a valid semver string (e.g. "dev").
+// Both strings should be in "major.minor.patch" format (no "v" prefix).
+func IsOlderVersion(current, latest string) bool {
+	cp := strings.SplitN(current, ".", 3)
+	lp := strings.SplitN(latest, ".", 3)
+	if len(lp) != 3 {
+		return false
+	}
+	// If current is not valid semver (e.g. "dev"), treat as outdated.
+	if len(cp) != 3 {
+		return true
+	}
+	for i := 0; i < 3; i++ {
+		c, err1 := strconv.Atoi(cp[i])
+		l, err2 := strconv.Atoi(lp[i])
+		if err1 != nil {
+			return true
+		}
+		if err2 != nil {
+			return false
+		}
+		if c < l {
+			return true
+		}
+		if c > l {
+			return false
+		}
+	}
+	return false
+}
+
 // Install downloads the latest greyproxy release and runs "greyproxy install".
+// Set GREYWALL_NO_GREYPROXY_INSTALL=1 to skip installation entirely.
 func Install(opts InstallOptions) error {
+	if os.Getenv("GREYWALL_NO_GREYPROXY_INSTALL") == "1" {
+		return nil
+	}
+
 	if opts.Output == nil {
 		opts.Output = os.Stderr
 	}
@@ -247,18 +295,9 @@ func extractTarGz(archivePath string) (string, error) {
 	return tmpDir, nil
 }
 
-// runGreyproxyInstall shells out to the extracted greyproxy binary with "install" arg.
-// Stdin is connected to /dev/tty so interactive prompts work when piped via curl | sh.
+// runGreyproxyInstall shells out to the extracted greyproxy binary with "install --force".
 func runGreyproxyInstall(binaryPath string) error {
-	cmd := exec.Command(binaryPath, "install") //nolint:gosec // binaryPath is from our extracted archive
-	tty, err := os.Open("/dev/tty")
-	if err != nil {
-		// Fallback to stdin if /dev/tty is unavailable (e.g., non-interactive CI)
-		cmd.Stdin = os.Stdin
-	} else {
-		cmd.Stdin = tty
-		defer func() { _ = tty.Close() }()
-	}
+	cmd := exec.Command(binaryPath, "install", "--force") //nolint:gosec // binaryPath is from our extracted archive
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
