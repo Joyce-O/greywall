@@ -447,6 +447,12 @@ func runCheck(_ *cobra.Command, _ []string) error {
 			fmt.Println(sandbox.CheckFail("greyproxy running"))
 			steps = append(steps, "greywall setup")
 		}
+		if latest, err := proxy.CheckLatestVersion(); err == nil {
+			if proxy.IsOlderVersion(status.Version, latest) {
+				fmt.Println(sandbox.CheckFail(fmt.Sprintf("greyproxy up-to-date (v%s available, installed v%s)", latest, status.Version)))
+				steps = append(steps, "greywall setup")
+			}
+		}
 	} else {
 		fmt.Println(sandbox.CheckFail("greyproxy"))
 		fmt.Println(sandbox.CheckFail("greyproxy running"))
