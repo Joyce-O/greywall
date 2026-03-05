@@ -61,30 +61,22 @@ if [ -x "$INSTALL_DIR/$BINARY" ]; then
 fi
 
 echo ""
-echo "This will:"
+if [ -n "$UPGRADE" ]; then
+  echo "Ready to update the existing installation. This will:"
+else
+  echo "Ready to install greywall. This will:"
+fi
 echo "  1. Download greywall $VERSION from GitHub"
 echo "  2. Verify the download checksum"
 echo "  3. Install the binary to $INSTALL_DIR"
 echo ""
 
-if [ -n "$UPGRADE" ]; then
-  printf "Replace existing installation? [y/N] "
-else
-  printf "Proceed with installation? [Y/n] "
-fi
+printf "Proceed? [Y/n] "
 read -r REPLY </dev/tty
-
-if [ -n "$UPGRADE" ]; then
-  case "$REPLY" in
-    [yY]*) ;;
-    *)     echo "Aborted."; exit 0 ;;
-  esac
-else
-  case "$REPLY" in
-    [nN]*) echo "Aborted."; exit 0 ;;
-    *)     ;;
-  esac
-fi
+case "$REPLY" in
+  [nN]*) echo "Aborted."; exit 0 ;;
+  *)     ;;
+esac
 
 echo ""
 
@@ -122,19 +114,9 @@ chmod +x "$INSTALL_DIR/$BINARY"
 
 echo "Installed greywall $VERSION to $INSTALL_DIR"
 
-# Check if greyproxy is installed, offer to set it up if not
-if ! command -v greyproxy >/dev/null 2>&1 && [ ! -x "$INSTALL_DIR/greyproxy" ]; then
-  echo ""
-  echo "greyproxy is not installed."
-  echo "It pairs with greywall to proxy and filter network traffic for all sandboxed commands."
-  echo ""
-  printf "Install greyproxy now? [Y/n] "
-  read -r REPLY </dev/tty
-  case "$REPLY" in
-    [nN]*) ;;
-    *)     echo ""; "$INSTALL_DIR/$BINARY" setup ;;
-  esac
-fi
+# Always install/update greyproxy
+echo ""
+"$INSTALL_DIR/$BINARY" setup
 
 case ":$PATH:" in
   *":$INSTALL_DIR:"*) ;;
