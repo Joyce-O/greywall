@@ -22,6 +22,15 @@ greywall -c "rm -rf /"  # → blocked by command deny rules
 
 ## Install
 
+**Homebrew (macOS):**
+
+```bash
+brew tap greyhavenhq/tap
+brew install greywall
+```
+
+This also installs [greyproxy](https://github.com/GreyhavenHQ/greyproxy) as a dependency.
+
 **Linux / Mac:**
 
 ```bash
