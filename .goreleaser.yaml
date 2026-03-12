@@ -103,7 +103,8 @@ homebrew_casks:
     dependencies:
       - cask: greyproxy
     caveats: |
-      Run 'greywall setup' to start the greyproxy service.
+      greyproxy is installed as a dependency and runs automatically.
+      Dashboard: http://localhost:43080
 
 release:
   draft: false
