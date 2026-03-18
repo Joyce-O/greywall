@@ -1,0 +1,27 @@
+name: Greywall Sandbox
+description: Sandbox AI coding agents in CI — enforce filesystem and network policies without interactive approval.
+
+inputs:
+  version:
+    description: Greywall version to install (default: latest)
+    required: false
+    default: latest
+  allow-network:
+    description: Comma-separated list of domains to allow (e.g. "api.anthropic.com,github.com")
+    required: false
+    default: ""
+  deny-read:
+    description: Comma-separated glob patterns to deny read access (e.g. "**/.env*")
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install greywall
+      shell: bash
+      run: ${{ github.action_path }}/scripts/action-setup.sh
+      env:
+        GREYWALL_VERSION: ${{ inputs.version }}
+        GREYWALL_ALLOW_NETWORK: ${{ inputs.allow-network }}
+        GREYWALL_DENY_READ: ${{ inputs.deny-read }}
