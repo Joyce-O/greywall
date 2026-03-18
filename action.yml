@@ -1,17 +1,17 @@
 name: Greywall Sandbox
-description: Sandbox AI coding agents in CI — enforce filesystem and network policies without interactive approval.
+description: "Sandbox AI coding agents in CI — enforce filesystem and network policies without interactive approval."
 
 inputs:
   version:
-    description: Greywall version to install (default: latest)
+    description: "Greywall version to install (default: latest)"
     required: false
     default: latest
   allow-network:
-    description: Comma-separated list of domains to allow (e.g. "api.anthropic.com,github.com")
+    description: "Comma-separated list of domains to allow (e.g. api.anthropic.com,github.com)"
     required: false
     default: ""
   deny-read:
-    description: Comma-separated glob patterns to deny read access (e.g. "**/.env*")
+    description: "Comma-separated glob patterns to deny read access (e.g. **/.env*)"
     required: false
     default: ""
 
