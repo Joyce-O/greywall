@@ -4,6 +4,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -125,6 +126,7 @@ Configuration file format:
 	rootCmd.AddCommand(newProfilesCmd())
 	rootCmd.AddCommand(newCheckCmd())
 	rootCmd.AddCommand(newSetupCmd())
+	rootCmd.AddCommand(newUpdateCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -589,13 +591,15 @@ func newSetupCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "setup",
 		Short: "Install and start greyproxy (network proxy for sandboxed commands)",
-		Long: `Downloads and installs greyproxy from GitHub releases.
+		Long: `Builds and installs greyproxy from source.
 
 greyproxy provides SOCKS5 proxying and DNS resolution for sandboxed commands.
+Requires git and go on PATH.
+
 The installer will:
-  1. Download the latest greyproxy release for your platform
-  2. Install the binary to ~/.local/bin/greyproxy
-  3. Register and start a systemd user service`,
+  1. Clone the greyproxy repository at the latest release tag
+  2. Build the binary with go build
+  3. Install to ~/.local/bin/greyproxy and register as a service`,
 		Args: cobra.NoArgs,
 		RunE: runSetup,
 	}
@@ -605,23 +609,25 @@ func runSetup(_ *cobra.Command, _ []string) error {
 	status := proxy.Detect()
 
 	if status.Installed && status.Running {
-		latest, err := proxy.CheckLatestVersion()
+		latest, err := proxy.CheckLatestTag(false)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: could not check for updates: %v\n", err)
 			fmt.Printf("greyproxy is already installed (v%s) and running.\n", status.Version)
 			fmt.Printf("Run 'greywall check' for full status.\n")
 			return nil
 		}
-		if proxy.IsOlderVersion(status.Version, latest) {
-			fmt.Printf("greyproxy update available: v%s -> v%s\n", status.Version, latest)
+		latestVer := strings.TrimPrefix(latest, "v")
+		if proxy.IsOlderVersion(status.Version, latestVer) {
+			fmt.Printf("greyproxy update available: v%s -> %s\n", status.Version, latest)
 			if proxy.IsBrewManaged(status.Path) {
 				fmt.Printf("greyproxy is managed by Homebrew. To update, run:\n")
 				fmt.Printf("  brew upgrade greyproxy\n")
 				return nil
 			}
-			fmt.Printf("Upgrading...\n")
-			return proxy.Install(proxy.InstallOptions{
+			fmt.Printf("Upgrading from source...\n")
+			return proxy.InstallFromSource(proxy.SourceBuildOptions{
 				Output: os.Stderr,
+				Tag:    latest,
 			})
 		}
 		fmt.Printf("greyproxy is already installed (v%s) and running.\n", status.Version)
@@ -644,9 +650,165 @@ func runSetup(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	return proxy.Install(proxy.InstallOptions{
+	return proxy.InstallFromSource(proxy.SourceBuildOptions{
 		Output: os.Stderr,
 	})
+}
+
+// newUpdateCmd creates the update subcommand for updating greywall and greyproxy.
+func newUpdateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update greywall and greyproxy to the latest release (builds from source)",
+		Long: `Updates both greywall and greyproxy by cloning their repos and building from source.
+
+Requires git, go, and make on PATH.
+
+Examples:
+  greywall update          # update to latest stable
+  greywall update --beta   # update to latest beta`,
+		Args: cobra.NoArgs,
+		RunE: runUpdate,
+	}
+	cmd.Flags().Bool("beta", false, "Update to the latest beta (pre-release) version")
+	return cmd
+}
+
+func runUpdate(cmd *cobra.Command, _ []string) error {
+	beta, _ := cmd.Flags().GetBool("beta")
+
+	// 1. Fetch latest greyproxy tag
+	greyproxyTag, err := proxy.CheckLatestTag(beta)
+	if err != nil {
+		return fmt.Errorf("failed to fetch latest greyproxy tag: %w", err)
+	}
+
+	// 2. Fetch latest greywall tag
+	greywallTag, err := proxy.CheckLatestTagFor("GreyhavenHQ", "greywall", beta)
+	if err != nil {
+		return fmt.Errorf("failed to fetch latest greywall tag: %w", err)
+	}
+
+	channel := "stable"
+	if beta {
+		channel = "beta"
+	}
+	fmt.Printf("Updating to latest %s: greywall %s, greyproxy %s\n\n", channel, greywallTag, greyproxyTag)
+
+	// 3. Update greyproxy
+	fmt.Println("==> Updating greyproxy...")
+	if err := proxy.InstallFromSource(proxy.SourceBuildOptions{
+		Output: os.Stderr,
+		Tag:    greyproxyTag,
+	}); err != nil {
+		return fmt.Errorf("failed to update greyproxy: %w", err)
+	}
+
+	// 4. Update greywall (skip if brew-managed)
+	selfPath, _ := os.Executable()
+	if proxy.IsBrewManaged(selfPath) {
+		fmt.Printf("\ngreywall is managed by Homebrew. To update, run:\n")
+		if beta {
+			fmt.Printf("  greywall update --beta  (Homebrew tracks stable only — use this command for beta)\n")
+		} else {
+			fmt.Printf("  brew upgrade greywall\n")
+		}
+		return nil
+	}
+
+	fmt.Println("\n==> Updating greywall...")
+	if err := updateSelf(greywallTag, os.Stderr); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to update greywall: %v\n", err)
+		fmt.Fprintf(os.Stderr, "To update manually:\n")
+		fmt.Fprintf(os.Stderr, "  git clone --branch %s https://github.com/GreyhavenHQ/greywall.git\n", greywallTag)
+		fmt.Fprintf(os.Stderr, "  cd greywall && make build-ci && cp greywall ~/.local/bin/\n")
+	}
+
+	return nil
+}
+
+// updateSelf builds greywall from source at the given tag and replaces the running binary.
+func updateSelf(tag string, output io.Writer) error {
+	if _, err := exec.LookPath("git"); err != nil {
+		return fmt.Errorf("git is required: install git and try again")
+	}
+	if _, err := exec.LookPath("make"); err != nil {
+		return fmt.Errorf("make is required: install make and try again")
+	}
+
+	// Resolve symlinks to get the real executable path
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to determine executable path: %w", err)
+	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve executable path: %w", err)
+	}
+
+	tmpDir, err := os.MkdirTemp("", "greywall-build-*")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	_, _ = fmt.Fprintf(output, "Cloning greywall %s...\n", tag)
+	cloneCmd := exec.Command("git", "clone", "--depth=1", "--branch", tag, "https://github.com/GreyhavenHQ/greywall.git", tmpDir) //nolint:gosec // URL and tag are controlled
+	cloneCmd.Stdout = output
+	cloneCmd.Stderr = output
+	if err := cloneCmd.Run(); err != nil {
+		return fmt.Errorf("git clone failed: %w", err)
+	}
+
+	_, _ = fmt.Fprintf(output, "Building greywall...\n")
+	buildCmd := exec.Command("make", "build-ci") //nolint:gosec
+	buildCmd.Dir = tmpDir
+	buildCmd.Stdout = output
+	buildCmd.Stderr = output
+	if err := buildCmd.Run(); err != nil {
+		return fmt.Errorf("build failed: %w", err)
+	}
+
+	newBinary := filepath.Join(tmpDir, "greywall")
+	if _, err := os.Stat(newBinary); err != nil {
+		return fmt.Errorf("built binary not found: %w", err)
+	}
+
+	_, _ = fmt.Fprintf(output, "Replacing %s...\n", execPath)
+	if err := os.Rename(newBinary, execPath); err != nil {
+		// Rename across filesystems fails; copy instead
+		if err2 := copyFileTo(newBinary, execPath); err2 != nil {
+			return fmt.Errorf("failed to replace binary: %w (copy also failed: %v)", err, err2)
+		}
+	}
+
+	_, _ = fmt.Fprintf(output, "greywall updated to %s\n", tag)
+	return nil
+}
+
+// copyFileTo copies src to dst atomically (write to temp, then rename).
+func copyFileTo(src, dst string) error {
+	in, err := os.Open(src) //nolint:gosec // src is a path we control
+	if err != nil {
+		return err
+	}
+	defer func() { _ = in.Close() }()
+
+	tmpDst := dst + ".new"
+	out, err := os.OpenFile(tmpDst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755) //nolint:gosec
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.Remove(tmpDst) }()
+
+	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
+		return err
+	}
+	if err := out.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpDst, dst)
 }
 
 // newCompletionCmd creates the completion subcommand for shell completions.

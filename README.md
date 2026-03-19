@@ -31,10 +31,19 @@ brew install greywall
 
 This also installs [greyproxy](https://github.com/GreyhavenHQ/greyproxy) as a dependency.
 
-**Linux / Mac:**
+**Linux / Mac (build from source):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/GreyhavenHQ/greywall/main/install.sh | sh
+git clone https://github.com/GreyhavenHQ/greywall
+cd greywall
+make setup && make build
+cp greywall ~/.local/bin/greywall
+```
+
+Then install greyproxy (the network proxy):
+
+```bash
+greywall setup
 ```
 
 <details>
@@ -44,14 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/GreyhavenHQ/greywall/main/install.s
 
 ```bash
 go install github.com/GreyhavenHQ/greywall/cmd/greywall@latest
-```
-
-**Build from source:**
-
-```bash
-git clone https://github.com/GreyhavenHQ/greywall
-cd greywall
-make setup && make build
+greywall setup
 ```
 
 </details>
