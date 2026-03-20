@@ -15,6 +15,11 @@ bump_version() {
     local last_tag="$1"
     local bump_type="$2"
 
+    if [[ "$bump_type" != "patch" && "$bump_type" != "minor" && "$bump_type" != "beta" ]]; then
+        echo "Invalid bump type: $bump_type. Use 'patch', 'minor', or 'beta'." >&2
+        return 1
+    fi
+
     if [[ -z "$last_tag" ]]; then
         local new_version
         if [[ "$bump_type" == "beta" ]]; then

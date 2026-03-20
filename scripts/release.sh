@@ -21,11 +21,6 @@ DRY_RUN="${DRY_RUN:-0}"
 # shellcheck source=scripts/bump_version.sh
 source "$(dirname "$0")/bump_version.sh"
 
-# Validate bump type
-if [[ "$BUMP_TYPE" != "patch" && "$BUMP_TYPE" != "minor" && "$BUMP_TYPE" != "beta" ]]; then
-    error "Invalid bump type: $BUMP_TYPE. Use 'patch', 'minor', or 'beta'."
-fi
-
 info "Bump type: $BUMP_TYPE"
 
 # =============================================================================

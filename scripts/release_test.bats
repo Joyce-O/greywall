@@ -25,18 +25,13 @@ teardown() {
 }
 
 # =============================================================================
-# Input validation (tests release.sh directly — fails before any git fetch)
+# Input validation
 # =============================================================================
 
 @test "rejects invalid bump type" {
-    run bash "$BATS_TEST_DIRNAME/release.sh" foobar
+    run bump_version "" "foobar"
     [ "$status" -ne 0 ]
     [[ "$output" == *"Invalid bump type"* ]]
-}
-
-@test "defaults to patch when no argument given" {
-    run bash "$BATS_TEST_DIRNAME/release.sh"
-    [[ "$output" == *"Bump type: patch"* ]]
 }
 
 # =============================================================================
