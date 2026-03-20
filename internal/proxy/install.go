@@ -100,13 +100,13 @@ func Install(opts InstallOptions) error {
 	var err error
 	switch {
 	case opts.Tag != "":
-		rel, err = fetchReleaseFor(nil, "", githubOwner, githubRepo, opts.Tag)
+		rel, err = fetchReleaseFor(nil, "", githubOwner, githubRepo, "tags/"+opts.Tag)
 	case opts.Beta:
 		tag, tagErr := fetchLatestPreReleaseTagFor(nil, "", githubOwner, githubRepo)
 		if tagErr != nil {
 			return fmt.Errorf("failed to fetch latest pre-release: %w", tagErr)
 		}
-		rel, err = fetchReleaseFor(nil, "", githubOwner, githubRepo, tag)
+		rel, err = fetchReleaseFor(nil, "", githubOwner, githubRepo, "tags/"+tag)
 	default:
 		rel, err = fetchLatestRelease()
 	}
@@ -164,6 +164,41 @@ func Install(opts InstallOptions) error {
 	return nil
 }
 
+// DownloadGreywallBinary downloads the greywall release binary for the current platform
+// to a temp directory and returns the path to the extracted binary.
+// tag must include the "v" prefix (e.g. "v0.2.0").
+// The caller is responsible for removing the returned directory when done.
+func DownloadGreywallBinary(tag string) (binPath string, cleanup func(), err error) {
+	rel, err := fetchReleaseFor(nil, "", "GreyhavenHQ", "greywall", "tags/"+tag)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to fetch greywall release %s: %w", tag, err)
+	}
+
+	downloadURL, _, err := resolveGreywallAssetURL(rel)
+	if err != nil {
+		return "", nil, err
+	}
+
+	archivePath, err := downloadAsset(downloadURL)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to download greywall %s: %w", tag, err)
+	}
+
+	extractDir, err := extractTarGz(archivePath)
+	_ = os.Remove(archivePath)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to extract greywall archive: %w", err)
+	}
+
+	bin := filepath.Join(extractDir, "greywall")
+	if _, err := os.Stat(bin); err != nil {
+		_ = os.RemoveAll(extractDir)
+		return "", nil, fmt.Errorf("greywall binary not found in archive")
+	}
+
+	return bin, func() { _ = os.RemoveAll(extractDir) }, nil
+}
+
 // CheckLatestTag returns the latest greyproxy release tag (with "v" prefix).
 // If beta is true, returns the latest pre-release tag.
 func CheckLatestTag(beta bool) (string, error) {
@@ -198,6 +233,29 @@ func runGreyproxyInstall(binaryPath string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+// resolveGreywallAssetURL finds the correct greywall asset URL for the current OS/arch.
+// Greywall uses GoReleaser defaults: title-case OS (Darwin/Linux) and x86_64 for amd64.
+func resolveGreywallAssetURL(rel *release) (downloadURL, name string, err error) {
+	ver := strings.TrimPrefix(rel.TagName, "v")
+	goos := runtime.GOOS
+	osName := strings.ToUpper(goos[:1]) + goos[1:]
+	archName := runtime.GOARCH
+	switch archName {
+	case "amd64":
+		archName = "x86_64"
+	case "386":
+		archName = "i386"
+	}
+
+	expected := fmt.Sprintf("greywall_%s_%s_%s.tar.gz", ver, osName, archName)
+	for _, a := range rel.Assets {
+		if a.Name == expected {
+			return a.BrowserDownloadURL, a.Name, nil
+		}
+	}
+	return "", "", fmt.Errorf("no greywall asset found for %s/%s (expected: %s)", goos, runtime.GOARCH, expected)
 }
 
 // resolveAssetURL finds the correct asset download URL for the current OS/arch.
