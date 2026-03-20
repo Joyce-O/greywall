@@ -164,7 +164,6 @@ func Install(opts InstallOptions) error {
 	return nil
 }
 
-
 // CheckLatestTag returns the latest greyproxy release tag (with "v" prefix).
 // If beta is true, returns the latest pre-release tag.
 func CheckLatestTag(beta bool) (string, error) {
