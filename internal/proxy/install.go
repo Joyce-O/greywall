@@ -77,7 +77,7 @@ func IsOlderVersion(current, latest string) bool {
 
 // fetchLatestRelease queries the GitHub API for the latest greyproxy release.
 func fetchLatestRelease() (*release, error) {
-	return fetchReleaseFor(githubOwner, githubRepo, "latest")
+	return fetchReleaseFor(nil, "", githubOwner, githubRepo, "latest")
 }
 
 // runGreyproxyInstall shells out to the extracted greyproxy binary with "install --force".
@@ -99,9 +99,6 @@ type SourceBuildOptions struct {
 // and runs "greyproxy install --force" to register the service.
 // Requires git and go on PATH.
 func InstallFromSource(opts SourceBuildOptions) error {
-	if os.Getenv("GREYWALL_NO_GREYPROXY_INSTALL") == "1" {
-		return nil
-	}
 	if opts.Output == nil {
 		opts.Output = os.Stderr
 	}
@@ -181,20 +178,30 @@ func CheckLatestTag(beta bool) (string, error) {
 // CheckLatestTagFor returns the latest release tag for any GitHub repo.
 // If beta is true, returns the latest pre-release tag; otherwise returns the latest stable tag.
 func CheckLatestTagFor(owner, repo string, beta bool) (string, error) {
+	return checkLatestTagFor(nil, "", owner, repo, beta)
+}
+
+func checkLatestTagFor(client *http.Client, apiBase, owner, repo string, beta bool) (string, error) {
 	if !beta {
-		rel, err := fetchReleaseFor(owner, repo, "latest")
+		rel, err := fetchReleaseFor(client, apiBase, owner, repo, "latest")
 		if err != nil {
 			return "", err
 		}
 		return rel.TagName, nil
 	}
-	return fetchLatestPreReleaseTagFor(owner, repo)
+	return fetchLatestPreReleaseTagFor(client, apiBase, owner, repo)
 }
 
 // fetchReleaseFor fetches a specific GitHub release endpoint (e.g. "latest" or a tag name).
-func fetchReleaseFor(owner, repo, endpoint string) (*release, error) {
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/%s", owner, repo, endpoint)
-	client := &http.Client{Timeout: apiTimeout}
+// client and apiBase are optional; nil/empty use production defaults.
+func fetchReleaseFor(client *http.Client, apiBase, owner, repo, endpoint string) (*release, error) {
+	if client == nil {
+		client = &http.Client{Timeout: apiTimeout}
+	}
+	if apiBase == "" {
+		apiBase = "https://api.github.com"
+	}
+	apiURL := fmt.Sprintf("%s/repos/%s/%s/releases/%s", apiBase, owner, repo, endpoint)
 
 	ctx, cancel := context.WithTimeout(context.Background(), apiTimeout)
 	defer cancel()
@@ -224,9 +231,15 @@ func fetchReleaseFor(owner, repo, endpoint string) (*release, error) {
 }
 
 // fetchLatestPreReleaseTagFor returns the most recent pre-release tag for the given repo.
-func fetchLatestPreReleaseTagFor(owner, repo string) (string, error) {
-	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases?per_page=20", owner, repo)
-	client := &http.Client{Timeout: apiTimeout}
+// client and apiBase are optional; nil/empty use production defaults.
+func fetchLatestPreReleaseTagFor(client *http.Client, apiBase, owner, repo string) (string, error) {
+	if client == nil {
+		client = &http.Client{Timeout: apiTimeout}
+	}
+	if apiBase == "" {
+		apiBase = "https://api.github.com"
+	}
+	apiURL := fmt.Sprintf("%s/repos/%s/%s/releases?per_page=20", apiBase, owner, repo)
 
 	ctx, cancel := context.WithTimeout(context.Background(), apiTimeout)
 	defer cancel()
