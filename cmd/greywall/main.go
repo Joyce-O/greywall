@@ -586,6 +586,30 @@ func runCommand(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Inject keyring secrets for active profiles (Linux only).
+	// This reads from the host keyring before sandboxing blocks D-Bus access.
+	// Check the command itself and any explicitly loaded profiles.
+	if !learning {
+		profileNames := []string{cmdName}
+		if profileName != "" {
+			for _, name := range strings.Split(profileName, ",") {
+				name = strings.TrimSpace(name)
+				if name != "" {
+					profileNames = append(profileNames, name)
+				}
+			}
+		}
+		for _, name := range profileNames {
+			canonical := profiles.IsKnownAgent(name)
+			if canonical == "" {
+				continue
+			}
+			if secrets := profiles.GetKeyringSecrets(canonical); secrets != nil {
+				hardenedEnv = append(hardenedEnv, profiles.ResolveKeyringSecrets(secrets, debug)...)
+			}
+		}
+	}
+
 	execCmd := exec.Command("sh", "-c", sandboxedCommand) //nolint:gosec // sandboxedCommand is constructed from user input - intentional
 	execCmd.Env = hardenedEnv
 	execCmd.Stdin = os.Stdin
@@ -781,7 +805,8 @@ func runCheck(_ *cobra.Command, _ []string) error {
 			fmt.Println(sandbox.CheckFail("greyproxy running"))
 			steps = append(steps, "greywall setup")
 		}
-		if latest, err := proxy.CheckLatestVersion(); err == nil {
+		if latestTag, err := proxy.CheckLatestTag(false); err == nil {
+			latest := strings.TrimPrefix(latestTag, "v")
 			if proxy.IsOlderVersion(status.Version, latest) {
 				fmt.Println(sandbox.CheckFail(fmt.Sprintf("greyproxy up-to-date (v%s available, installed v%s)", latest, status.Version)))
 				steps = append(steps, upgradeHint)

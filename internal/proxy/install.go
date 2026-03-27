@@ -42,16 +42,6 @@ type InstallOptions struct {
 	Beta   bool      // if Tag is empty and Beta is true, fetches latest pre-release tag
 }
 
-// CheckLatestVersion fetches the latest greyproxy release tag from GitHub
-// and returns the version string (without the "v" prefix).
-func CheckLatestVersion() (string, error) {
-	rel, err := fetchLatestRelease()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimPrefix(rel.TagName, "v"), nil
-}
-
 // IsOlderVersion returns true if current is strictly older than latest,
 // or if current is not a valid semver string (e.g. "dev").
 // Both strings should be in "major.minor.patch" format (no "v" prefix).
