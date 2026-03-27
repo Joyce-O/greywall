@@ -31,21 +31,26 @@ var (
 )
 
 var (
-	debug         bool
-	monitor       bool
-	settingsPath  string
-	proxyURL      string
-	httpProxyURL  string
-	dnsAddr       string
-	cmdString     string
-	exposePorts   []string
-	forwardPorts  []string
-	exitCode      int
-	showVersion   bool
-	linuxFeatures bool
-	learning      bool
-	profileName   string
-	autoProfile   bool
+	debug                  bool
+	monitor                bool
+	settingsPath           string
+	proxyURL               string
+	httpProxyURL           string
+	dnsAddr                string
+	cmdString              string
+	exposePorts            []string
+	forwardPorts           []string
+	exitCode               int
+	showVersion            bool
+	linuxFeatures          bool
+	learning               bool
+	profileName            string
+	autoProfile            bool
+	noCredentialProtection bool
+	injectLabels           []string
+	secretVars             []string
+	ignoreVars             []string
+	skipVersionCheck       bool
 )
 
 func main() {
@@ -82,6 +87,8 @@ Examples:
   greywall -p 3000 -c "npm run dev"                             # Expose port 3000
   greywall -f 5432 -- psql -h localhost                          # Forward host port into sandbox
   greywall --learning -- opencode                                # Learn filesystem needs
+  greywall --secret MY_VAR -- command            # Protect a custom env var
+  greywall --inject ANTHROPIC_API_KEY -- command  # Inject from proxy dashboard
 
 Configuration file format:
 {
@@ -117,6 +124,12 @@ Configuration file format:
 	rootCmd.Flags().BoolVar(&learning, "learning", false, "Run in learning mode: trace filesystem access and generate a config profile")
 	rootCmd.Flags().StringVar(&profileName, "profile", "", "Load profiles by name, comma-separated (e.g. --profile claude,uv)")
 	rootCmd.Flags().BoolVar(&autoProfile, "auto-profile", false, "Use saved or built-in profile without prompting")
+	rootCmd.Flags().BoolVar(&noCredentialProtection, "no-credential-protection", false, "Disable credential substitution (real credentials visible in sandbox)")
+	rootCmd.Flags().StringArrayVar(&injectLabels, "inject", nil, "Inject a global credential by label (can be used multiple times, e.g. --inject ANTHROPIC_API_KEY)")
+	rootCmd.Flags().StringArrayVar(&secretVars, "secret", nil, "Protect an additional env var not in the default list (can be used multiple times)")
+	rootCmd.Flags().StringArrayVar(&ignoreVars, "ignore-secret", nil, "Exclude an env var from credential detection (can be used multiple times)")
+	rootCmd.Flags().BoolVar(&skipVersionCheck, "skip-version-check", false, "Skip greyproxy version check (for testing)")
+	_ = rootCmd.Flags().MarkHidden("skip-version-check")
 
 	// Hidden aliases for backwards compatibility
 	rootCmd.Flags().StringVar(&profileName, "template", "", "Alias for --profile (deprecated)")
@@ -277,6 +290,11 @@ func runCommand(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Merge config credentials with CLI flags (config + CLI, deduplicated)
+	secretVars = mergeUnique(cfg.Credentials.Secrets, secretVars)
+	injectLabels = mergeUnique(cfg.Credentials.Inject, injectLabels)
+	ignoreVars = mergeUnique(cfg.Credentials.Ignore, ignoreVars)
+
 	// CLI flags override config
 	if proxyURL != "" {
 		cfg.Network.ProxyURL = proxyURL
@@ -367,6 +385,173 @@ func runCommand(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	hardenedEnv := sandbox.GetHardenedEnv()
+	if debug {
+		if stripped := sandbox.GetStrippedEnvVars(os.Environ()); len(stripped) > 0 {
+			fmt.Fprintf(os.Stderr, "[greywall] Stripped dangerous env vars: %v\n", stripped)
+		}
+	}
+
+	// Check greyproxy version when --inject is used (requires global_credentials support)
+	if len(injectLabels) > 0 && !skipVersionCheck {
+		status := proxy.Detect()
+		if !status.Running {
+			return fmt.Errorf("--inject requires greyproxy to be running (run 'greywall setup')")
+		}
+		// global_credentials support was added after v0.3.3
+		const minVersion = "0.3.4"
+		if status.Version != "" && status.Version != "dev" && proxy.IsOlderVersion(status.Version, minVersion) {
+			return fmt.Errorf("--inject requires greyproxy v%s or later (found v%s); upgrade with 'greywall setup'", minVersion, status.Version)
+		}
+	}
+
+	// Credential substitution: detect credentials, rewrite .env files, register
+	// with greyproxy, and substitute env vars. This must happen before WrapCommand
+	// so that rewritten .env files are available for bind-mounting into the sandbox.
+	var credSessionID string
+	var credMappings []sandbox.CredentialMapping
+	var rewrittenEnvFiles map[string]string
+	var stopHeartbeat func()
+	credSubstitutionActive := false
+	if !noCredentialProtection && !learning {
+		sessionID, err := sandbox.GenerateSessionID()
+		if err != nil {
+			if debug {
+				fmt.Fprintf(os.Stderr, "[greywall:cred] failed to generate session ID: %v\n", err)
+			}
+		} else {
+			credSessionID = sessionID
+			detected, err := sandbox.DetectCredentials(hardenedEnv, sessionID, secretVars, ignoreVars)
+			if err != nil {
+				if debug {
+					fmt.Fprintf(os.Stderr, "[greywall:cred] failed to detect credentials: %v\n", err)
+				}
+			}
+			if detected == nil {
+				detected = []sandbox.CredentialMapping{}
+			}
+
+			containerName := cmdName
+			if containerName == "" {
+				containerName = "sandbox"
+			}
+
+			if len(detected) > 0 || len(injectLabels) > 0 {
+				// Build the set of credential key names for .env file scanning.
+				credentialKeys := make(map[string]bool, len(detected)+len(injectLabels))
+				for _, m := range detected {
+					credentialKeys[m.EnvVar] = true
+				}
+				for _, label := range injectLabels {
+					credentialKeys[label] = true
+				}
+
+				// Rewrite .env files BEFORE registration so file-specific
+				// mappings can be included in the session.
+				cwd, _ := os.Getwd()
+				envResult, err := sandbox.RewriteEnvFiles(cwd, sessionID, credentialKeys, debug)
+				if err != nil {
+					if debug {
+						fmt.Fprintf(os.Stderr, "[greywall:cred] failed to rewrite .env files: %v\n", err)
+					}
+				}
+
+				// Combine env-detected mappings with file-specific mappings.
+				allMappings := make([]sandbox.CredentialMapping, len(detected))
+				copy(allMappings, detected)
+				if envResult != nil {
+					allMappings = append(allMappings, envResult.FileMappings...)
+					rewrittenEnvFiles = envResult.RewrittenFiles
+				}
+
+				// Build metadata for the dashboard
+				meta := &sandbox.SessionMetadata{
+					WorkDir: cwd,
+					Cmd:     cmdName,
+					PID:     strconv.Itoa(os.Getpid()),
+				}
+				if len(args) > 0 {
+					if binPath, err := exec.LookPath(args[0]); err == nil {
+						meta.BinaryPath = binPath
+					}
+					if len(args) > 1 {
+						meta.Args = strings.Join(args[1:], " ")
+					}
+				}
+
+				// Register ALL mappings (env + file) with the proxy in one call.
+				regResult, err := sandbox.RegisterSession(sessionID, containerName, allMappings, injectLabels, meta, "")
+				if err != nil {
+					if debug {
+						fmt.Fprintf(os.Stderr, "[greywall:cred] failed to register session: %v (credentials will be visible)\n", err)
+					}
+					credMappings = nil
+					// Clean up rewritten files since we can't register them.
+					sandbox.CleanupRewrittenFiles(rewrittenEnvFiles)
+					rewrittenEnvFiles = nil
+				} else {
+					credMappings = allMappings
+
+					// Add global credential mappings returned by the proxy.
+					// Build envMappings (detected + globals) for env substitution
+					// separately from credMappings (all) which includes file mappings.
+					envMappings := make([]sandbox.CredentialMapping, len(detected))
+					copy(envMappings, detected)
+					for label, placeholder := range regResult.GlobalCredentials {
+						m := sandbox.CredentialMapping{
+							EnvVar:      label,
+							Placeholder: placeholder,
+						}
+						credMappings = append(credMappings, m)
+						envMappings = append(envMappings, m)
+					}
+
+					// Substitute credentials in the environment using only
+					// env-detected + global mappings. File mappings must NOT
+					// be used here because they may have different placeholders
+					// for the same key name (e.g., .env has KEY=val1 while
+					// the env var has KEY=val2).
+					hardenedEnv = sandbox.SubstituteEnv(hardenedEnv, envMappings)
+					stopHeartbeat = sandbox.StartHeartbeatLoop(sessionID, containerName, allMappings, injectLabels, meta, "", debug)
+					credSubstitutionActive = true
+					manager.SetRewrittenEnvFiles(rewrittenEnvFiles)
+
+					if debug {
+						labels := make(map[string]bool)
+						for _, m := range credMappings {
+							labels[m.EnvVar] = true
+						}
+						var labelList []string
+						for l := range labels {
+							labelList = append(labelList, l)
+						}
+						fmt.Fprintf(os.Stderr, "[greywall:cred] protected %d credentials (%d env, %d from .env files): %s\n",
+							len(credMappings), len(detected), len(credMappings)-len(detected), strings.Join(labelList, ", "))
+					}
+				}
+			} else if debug {
+				fmt.Fprintf(os.Stderr, "[greywall:cred] no credentials detected in environment\n")
+			}
+		}
+	}
+
+	// Warn if .env files will be masked because credential substitution is not active.
+	if !credSubstitutionActive && !learning {
+		cwd, _ := os.Getwd()
+		sandbox.WarnMaskedEnvFiles(cwd)
+	}
+
+	// Ensure cleanup on exit
+	defer func() {
+		if stopHeartbeat != nil {
+			stopHeartbeat()
+		}
+		if credSessionID != "" && len(credMappings) > 0 {
+			_ = sandbox.DeleteSession(credSessionID, "")
+		}
+		sandbox.CleanupRewrittenFiles(rewrittenEnvFiles)
+	}()
+
 	sandboxedCommand, err := manager.WrapCommand(command)
 	if err != nil {
 		return fmt.Errorf("failed to wrap command: %w", err)
@@ -375,13 +560,6 @@ func runCommand(cmd *cobra.Command, args []string) error {
 	if debug {
 		fmt.Fprintf(os.Stderr, "[greywall] Sandboxed command: %s\n", sandboxedCommand)
 		fmt.Fprintf(os.Stderr, "[greywall] Executing: sh -c %q\n", sandboxedCommand)
-	}
-
-	hardenedEnv := sandbox.GetHardenedEnv()
-	if debug {
-		if stripped := sandbox.GetStrippedEnvVars(os.Environ()); len(stripped) > 0 {
-			fmt.Fprintf(os.Stderr, "[greywall] Stripped dangerous env vars: %v\n", stripped)
-		}
 	}
 
 	// Inject keyring secrets for active profiles (Linux only).
@@ -1014,4 +1192,29 @@ parseCommand:
 		fmt.Fprintf(os.Stderr, "[greywall:landlock-wrapper] Exec failed: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// mergeUnique combines two string slices, removing duplicates while preserving order.
+func mergeUnique(a, b []string) []string {
+	if len(a) == 0 {
+		return b
+	}
+	if len(b) == 0 {
+		return a
+	}
+	seen := make(map[string]bool, len(a)+len(b))
+	result := make([]string, 0, len(a)+len(b))
+	for _, s := range a {
+		if !seen[s] {
+			seen[s] = true
+			result = append(result, s)
+		}
+	}
+	for _, s := range b {
+		if !seen[s] {
+			seen[s] = true
+			result = append(result, s)
+		}
+	}
+	return result
 }
