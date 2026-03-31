@@ -38,14 +38,14 @@ type asset struct {
 // InstallOptions controls the greyproxy installation behavior.
 type InstallOptions struct {
 	Output io.Writer // progress output (typically os.Stderr)
-	Tag    string    // specific tag to install; if empty, uses latest stable
-	Beta   bool      // if Tag is empty and Beta is true, fetches latest pre-release tag
 }
 
 // IsOlderVersion returns true if current is strictly older than latest,
 // or if current is not a valid semver string (e.g. "dev").
-// Both strings should be in "major.minor.patch" format (no "v" prefix).
+// Accepts strings with or without a "v" prefix (e.g. "v1.2.3" or "1.2.3").
 func IsOlderVersion(current, latest string) bool {
+	current = strings.TrimPrefix(current, "v")
+	latest = strings.TrimPrefix(latest, "v")
 	cp := strings.SplitN(current, ".", 3)
 	lp := strings.SplitN(latest, ".", 3)
 	if len(lp) != 3 {
@@ -85,21 +85,7 @@ func Install(opts InstallOptions) error {
 		opts.Output = os.Stderr
 	}
 
-	// Resolve which tag to install
-	var rel *release
-	var err error
-	switch {
-	case opts.Tag != "":
-		rel, err = fetchReleaseFor(nil, "", githubOwner, githubRepo, opts.Tag)
-	case opts.Beta:
-		tag, tagErr := fetchLatestPreReleaseTagFor(nil, "", githubOwner, githubRepo)
-		if tagErr != nil {
-			return fmt.Errorf("failed to fetch latest pre-release: %w", tagErr)
-		}
-		rel, err = fetchReleaseFor(nil, "", githubOwner, githubRepo, tag)
-	default:
-		rel, err = fetchLatestRelease()
-	}
+	rel, err := fetchLatestRelease()
 	if err != nil {
 		return fmt.Errorf("failed to fetch release: %w", err)
 	}
@@ -155,26 +141,16 @@ func Install(opts InstallOptions) error {
 }
 
 // CheckLatestTag returns the latest greyproxy release tag (with "v" prefix).
-// If beta is true, returns the latest pre-release tag.
-func CheckLatestTag(beta bool) (string, error) {
-	return CheckLatestTagFor(githubOwner, githubRepo, beta)
+func CheckLatestTag() (string, error) {
+	return checkLatestTag(nil, "")
 }
 
-// CheckLatestTagFor returns the latest release tag for any GitHub repo.
-// If beta is true, returns the latest pre-release tag; otherwise returns the latest stable tag.
-func CheckLatestTagFor(owner, repo string, beta bool) (string, error) {
-	return checkLatestTagFor(nil, "", owner, repo, beta)
-}
-
-func checkLatestTagFor(client *http.Client, apiBase, owner, repo string, beta bool) (string, error) {
-	if !beta {
-		rel, err := fetchReleaseFor(client, apiBase, owner, repo, "latest")
-		if err != nil {
-			return "", err
-		}
-		return rel.TagName, nil
+func checkLatestTag(client *http.Client, apiBase string) (string, error) {
+	rel, err := fetchReleaseFor(client, apiBase, githubOwner, githubRepo, "latest")
+	if err != nil {
+		return "", err
 	}
-	return fetchLatestPreReleaseTagFor(client, apiBase, owner, repo)
+	return rel.TagName, nil
 }
 
 // fetchLatestRelease queries the GitHub API for the latest greyproxy release.
@@ -336,51 +312,4 @@ func fetchReleaseFor(client *http.Client, apiBase, owner, repo, endpoint string)
 		return nil, fmt.Errorf("failed to parse release response: %w", err)
 	}
 	return &rel, nil
-}
-
-// fetchLatestPreReleaseTagFor returns the most recent pre-release tag for the given repo.
-// client and apiBase are optional; nil/empty use production defaults.
-func fetchLatestPreReleaseTagFor(client *http.Client, apiBase, owner, repo string) (string, error) {
-	if client == nil {
-		client = &http.Client{Timeout: apiTimeout}
-	}
-	if apiBase == "" {
-		apiBase = "https://api.github.com"
-	}
-	apiURL := fmt.Sprintf("%s/repos/%s/%s/releases?per_page=20", apiBase, owner, repo)
-
-	ctx, cancel := context.WithTimeout(context.Background(), apiTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "greywall-setup")
-
-	resp, err := client.Do(req) //nolint:gosec // apiURL is built from controlled inputs
-	if err != nil {
-		return "", fmt.Errorf("GitHub API request failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
-	}
-
-	var releases []struct {
-		TagName    string `json:"tag_name"`
-		PreRelease bool   `json:"prerelease"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
-		return "", fmt.Errorf("failed to parse releases response: %w", err)
-	}
-
-	for _, r := range releases {
-		if r.PreRelease {
-			return r.TagName, nil
-		}
-	}
-	return "", fmt.Errorf("no pre-release found for %s/%s", owner, repo)
 }

@@ -46,9 +46,9 @@ func TestIsOlderVersion(t *testing.T) {
 	}
 }
 
-func TestCheckLatestTagFor_Stable(t *testing.T) {
+func TestCheckLatestTag_OK(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/repos/owner/repo/releases/latest" {
+		if r.URL.Path != "/repos/greyhavenhq/greyproxy/releases/latest" {
 			http.NotFound(w, r)
 			return
 		}
@@ -57,7 +57,7 @@ func TestCheckLatestTagFor_Stable(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	tag, err := checkLatestTagFor(srv.Client(), srv.URL, "owner", "repo", false)
+	tag, err := checkLatestTag(srv.Client(), srv.URL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -66,61 +66,13 @@ func TestCheckLatestTagFor_Stable(t *testing.T) {
 	}
 }
 
-func TestCheckLatestTagFor_Beta(t *testing.T) {
-	releases := []struct {
-		TagName    string `json:"tag_name"`
-		PreRelease bool   `json:"prerelease"`
-	}{
-		{TagName: "v2.0.0-beta.1", PreRelease: true},
-		{TagName: "v1.9.0", PreRelease: false},
-	}
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/repos/owner/repo/releases" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(releases)
-	}))
-	defer srv.Close()
-
-	tag, err := checkLatestTagFor(srv.Client(), srv.URL, "owner", "repo", true)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if tag != "v2.0.0-beta.1" {
-		t.Errorf("got tag %q, want %q", tag, "v2.0.0-beta.1")
-	}
-}
-
-func TestCheckLatestTagFor_BetaNoneFound(t *testing.T) {
-	releases := []struct {
-		TagName    string `json:"tag_name"`
-		PreRelease bool   `json:"prerelease"`
-	}{
-		{TagName: "v1.9.0", PreRelease: false},
-	}
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(releases)
-	}))
-	defer srv.Close()
-
-	_, err := checkLatestTagFor(srv.Client(), srv.URL, "owner", "repo", true)
-	if err == nil {
-		t.Fatal("expected error when no pre-release found, got nil")
-	}
-}
-
-func TestCheckLatestTagFor_APIError(t *testing.T) {
+func TestCheckLatestTag_APIError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "rate limited", http.StatusTooManyRequests)
 	}))
 	defer srv.Close()
 
-	_, err := checkLatestTagFor(srv.Client(), srv.URL, "owner", "repo", false)
+	_, err := checkLatestTag(srv.Client(), srv.URL)
 	if err == nil {
 		t.Fatal("expected error on non-200 response, got nil")
 	}
